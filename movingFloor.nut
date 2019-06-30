@@ -20,4 +20,4 @@ function think()
         DoEntFire("!self", "Close", "", 0, self, self)
     }
 }
-
+// Example: https://www.youtube.com/watch?v=8L8yFzs7D54
