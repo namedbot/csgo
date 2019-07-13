@@ -8,6 +8,20 @@ To-Do:
 6:  Ideas
 7:  Chat commands?
 
+Methods:
+
+1. when a player is frozen, they could start thinking and check for nearby players who are on the same team every .1 second  
+2. make a list of unfrozen players, every time a player is frozen, remove them from the list, when unfrozen, add them back. 
+On freeze player function, check for the length of this player list, and end the game if it's 0
+3. you can simply add a key on their scope, `player.GetScriptScope().frozen <- true`
+4. vscripts
+vscript is rather limiting, you cannot hook events and change the resutl like you can in sourcemod. You can try making everyone 
+1000 HP and modifying the value manually
+
+
+
+
+
 
 Done:
 1:  Chat messages and Colors
@@ -15,3 +29,7 @@ Done:
 3:  Revive base
 4:  Weapon Spawns
 5: 
+
+
+
+
