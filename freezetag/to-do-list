@@ -26,8 +26,8 @@ vscript is rather limiting, you cannot hook events and change the resutl like yo
 Done:
 1:  Chat messages and Colors
 2:  Freeze Mechanism
-3:  Revive base
-4:  Weapon Spawns
+3:  Revive base mechanism
+4:  Weapon Spawns, give remove weapons.
 5: 
 
 
