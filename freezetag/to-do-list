@@ -11,7 +11,7 @@ To-Do:
 Methods:
 
 1. when a player is frozen, they could start thinking and check for nearby players who are on the same team every .1 second  
-2. vscript is rather limiting, you cannot hook events and change the resutl like you can in sourcemod. You can try making everyone 
+2. vscript is rather limiting, you cannot hook events and change the result like you can in sourcemod. You can try making everyone 
 1000 HP and modifying the value manually
 
 
