@@ -1,12 +1,29 @@
 IncludeScript("vs_library")
-Chat(" FreezeTest Loaded")
+Chat(" FreezeTest Loaded")
 
-function spawnScript()
+function SetupPlayers()
 {
-	activator.SetMaxHealth(1000)
-	activator.SetHealth(1000)
-	activator.GetScriptScope().frozen <- false
-	Chat(" " + activator.GetScriptScope().name + " spawned.")
+	::list_players_tt <- []
+	::list_players_ct <- []
+	local ent
+	while( ent = Entities.FindByClassname(ent,"*") ) if( ent.GetClassname() == "player" )
+	{
+		if( ent.GetTeam() == 2 ) list_players_tt.append(ent)
+		else if( ent.GetTeam() == 3 ) list_players_ct.append(ent)
+	}
+	
+	local set = function(p)
+	{
+		p.SetMaxHealth(1000)
+		p.SetHealth(1000)
+		p.GetScriptScope().frozen <- false
+		EntFireHandle(p, "Color","255 255 255")
+
+		Chat(p.GetScriptScope().name + " spawned.")
+	}
+	
+	foreach( p in list_players_tt ) set(p)
+	foreach( p in list_players_ct ) set(p)
 }
 
 function buddhaTest()
@@ -21,9 +38,27 @@ function buddhaTest()
 	local freezeFloat = 0
 	EntFire("freezeSpeedmod", "ModifySpeed", freezeFloat.tostring(), 0, player);
 	EntFire("stripWeapons", "Use","" , 0, player);
-	EntFireByHandle(player, "Color","25 75 255" , 0, player, player);
-
-	//To-do Add damage filter.
+	EntFireHandle(player, "Color","25 75 255")
+	EntFireHandle(player, "SetDamageFilter", "disableBullets")
+	EntFireHandle(player, "Color","25 75 255")
+	
+	
+	if( player.GetTeam() == 2 ){foreach( i, p in list_players_tt ) if( p == player ) list_players_tt.remove(i)}
+	else if( player.GetTeam() == 3 ){foreach( i, p in list_players_ct ) if( p == player ) list_players_ct.remove(i)}
+	
+	if( list_players_tt.len() == 0 )
+	{
+		Chat(" CT Win")
+		EntFire("roundEnd", "EndRound_CounterTerroristsWin", "5")
+	}
+	
+	else if( list_players_ct.len() == 0 )
+	{
+		Chat(" T Win")
+		EntFire("roundEnd", "EndRound_TerroristsWin", "5")		
+	}
+	
+	Chat(" " + list_players_tt.len() + " Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")
 }
 
 ::FreezeTag_revivePlayer <- function( player )
@@ -34,9 +69,11 @@ function buddhaTest()
 	player.SetHealth(1000)
 	EntFire("freezeSpeedmod", "ModifySpeed", reviveFloat.tostring(), 0, player);
 	EntFire("revivedWeapons", "Use","" , 0, player);
-	EntFireByHandle(player, "Color","255 255 255" , 0, player, player);
-
-	//To-do Remove damage filter.
+	EntFireHandle(player, "Color","255 255 255")
+	EntFireHandle(player, "SetDamageFilter", "")
+		
+	if( player.GetTeam() == 2 ) list_players_tt.append(player)
+	else if( player.GetTeam() == 3 ) list_players_ct.append(player)
 }
 
 ::OnGameEvent_player_hurt <- function( data )
@@ -45,17 +82,17 @@ function buddhaTest()
 	local player = VS.GetHandleByUserid(data.userid)
 	local name = player.GetScriptScope().name
 
-	ScriptPrintMessageChatTeam(2, " ● " + name + " has lost " + (data.dmg_health) + " health.")
+	ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has lost " + (data.dmg_health) + " health.")
 
     if( data.health  <= 850 && data.health  >= 750 && player.GetScriptScope().frozen == false )
     {
 		::FreezeTag_freezePlayer(player)
-		ScriptPrintMessageChatTeam(2, " ● " + name + " has been frozen.")
+		ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been frozen.")
     }
 	else if( data.health  <= 750 && player.GetScriptScope().frozen == true )
     {
 		::FreezeTag_revivePlayer(player)
-		ScriptPrintMessageChatTeam(2, " ● " + name + " has been revived.")
+		ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been revived.")
     }
 }
 
