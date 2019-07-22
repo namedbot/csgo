@@ -18,17 +18,14 @@ function SetupPlayers()
 		p.SetHealth(1000)
 		p.GetScriptScope().frozen <- false
 		EntFireHandle(p, "Color","255 255 255")
-
-		Chat(p.GetScriptScope().name + " spawned.")
+		EntFireHandle(p, "SetDamageFilter", "")
+		EntFire("revivedWeapons", "Use","" , 0, p);
+		
+		Chat(" " + p.GetScriptScope().name + " spawned.")
 	}
 	
 	foreach( p in list_players_tt ) set(p)
 	foreach( p in list_players_ct ) set(p)
-}
-
-function buddhaTest()
-{
-	DoEntFire("ccmd", "Command", "buddha", 0.00, activator, null)
 }
 
 ::FreezeTag_freezePlayer <- function( player )
@@ -36,29 +33,29 @@ function buddhaTest()
 	player.GetScriptScope().frozen = true
 
 	local freezeFloat = 0
-	EntFire("freezeSpeedmod", "ModifySpeed", freezeFloat.tostring(), 0, player);
+	EntFire("freezeSpeedmod", "ModifySpeed", freezeFloat.tostring(), 0, player)
 	EntFire("stripWeapons", "Use","" , 0, player);
 	EntFireHandle(player, "Color","25 75 255")
 	EntFireHandle(player, "SetDamageFilter", "disableBullets")
 	EntFireHandle(player, "Color","25 75 255")
-	
-	
-	if( player.GetTeam() == 2 ){foreach( i, p in list_players_tt ) if( p == player ) list_players_tt.remove(i)}
+
+	if( player.GetTeam() == 2 )
+	{foreach( i, p in list_players_tt ) if( p == player ) list_players_tt.remove(i)}
 	else if( player.GetTeam() == 3 ){foreach( i, p in list_players_ct ) if( p == player ) list_players_ct.remove(i)}
 	
 	if( list_players_tt.len() == 0 )
 	{
-		Chat(" CT Win")
+		Chat(" Counter-Terrorist Win")
 		EntFire("roundEnd", "EndRound_CounterTerroristsWin", "5")
+		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")
 	}
 	
 	else if( list_players_ct.len() == 0 )
 	{
-		Chat(" T Win")
-		EntFire("roundEnd", "EndRound_TerroristsWin", "5")		
+		Chat(" Terrorist Win")
+		EntFire("roundEnd", "EndRound_TerroristsWin", "5")	
+		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")		
 	}
-	
-	Chat(" " + list_players_tt.len() + " Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")
 }
 
 ::FreezeTag_revivePlayer <- function( player )
@@ -71,7 +68,6 @@ function buddhaTest()
 	EntFire("revivedWeapons", "Use","" , 0, player);
 	EntFireHandle(player, "Color","255 255 255")
 	EntFireHandle(player, "SetDamageFilter", "")
-		
 	if( player.GetTeam() == 2 ) list_players_tt.append(player)
 	else if( player.GetTeam() == 3 ) list_players_ct.append(player)
 }
@@ -81,19 +77,27 @@ function buddhaTest()
 	//VS.DumpScope(data)
 	local player = VS.GetHandleByUserid(data.userid)
 	local name = player.GetScriptScope().name
-
+	local attacker = VS.GetHandleByUserid(data.attacker)
+	
 	ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has lost " + (data.dmg_health) + " health.")
 
-    if( data.health  <= 850 && data.health  >= 750 && player.GetScriptScope().frozen == false )
+    if( data.health  <= 850 && player.GetScriptScope().frozen == false )
     {
 		::FreezeTag_freezePlayer(player)
-		ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been frozen.")
+		ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been frozen by " + attacker.GetScriptScope().name + ".")
+		EntFire( "addKill", "ApplyScore", "", 0, attacker )
     }
-	else if( data.health  <= 750 && player.GetScriptScope().frozen == true )
-    {
-		::FreezeTag_revivePlayer(player)
-		ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been revived.")
-    }
+}
+
+::OnGameEvent_item_pickup <- function(data)
+{
+	local player = VS.GetHandleByUserid(data.userid)
+	local name = player.GetScriptScope().name
+	
+	if(player.GetScriptScope().frozen == true)
+	{
+		EntFire("stripWeapons", "Use","" , 0, player)
+	}
 }
 
 //ScriptPrintMessageChatTeam(2, "   - light red 2 -  violet - blue - light blue	 - T color - CT color - light red - green(money awards) - light green - green - Team color - red - white - gold")
