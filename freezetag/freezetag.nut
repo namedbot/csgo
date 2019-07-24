@@ -1,31 +1,37 @@
 IncludeScript("vs_library")
 Chat(" FreezeTest Loaded")
+::list_players_tt <- []
+::list_players_ct <- []
 
-function SetupPlayers()
+
+
+function SetupPlayers( ent )
 {
-	::list_players_tt <- []
-	::list_players_ct <- []
-	local ent
-	while( ent = Entities.FindByClassname(ent,"*") ) if( ent.GetClassname() == "player" )
+	if( ent.GetClassname() != "player" ) return
+
+	ent.ValidateScriptScope()
+	local scope = ent.GetScriptScope()
+
+	// if the player is not set up
+	if( !("frozen" in scope) )
 	{
+		// adds userid/networkid/name
+		VS.ValidateUserid( ent )
+
+		// your custom slots
+		scope.frozen <- false
+
+		ent.SetMaxHealth(1000)
+		ent.SetHealth(1000)
+		EntFire("revivedWeapons", "Use","" , 0, ent);
+		EntFireHandle(ent, "Color","255 255 255")
+		EntFireHandle(ent, "SetDamageFilter", "")
+		delay( "Chat(\" \" + VS.Entity.FindByString(\""+ent+"\").GetScriptScope().name + \" spawned.\")", 0.1 )
 		if( ent.GetTeam() == 2 ) list_players_tt.append(ent)
 		else if( ent.GetTeam() == 3 ) list_players_ct.append(ent)
-	}
-	
-	local set = function(p)
-	{
-		p.SetMaxHealth(1000)
-		p.SetHealth(1000)
-		p.GetScriptScope().frozen <- false
-		EntFireHandle(p, "Color","255 255 255")
-		EntFireHandle(p, "SetDamageFilter", "")
-		EntFire("revivedWeapons", "Use","" , 0, p);
 		
-		Chat(" " + p.GetScriptScope().name + " spawned.")
 	}
 	
-	foreach( p in list_players_tt ) set(p)
-	foreach( p in list_players_ct ) set(p)
 }
 
 ::FreezeTag_freezePlayer <- function( player )
@@ -38,7 +44,8 @@ function SetupPlayers()
 	EntFireHandle(player, "Color","25 75 255")
 	EntFireHandle(player, "SetDamageFilter", "disableBullets")
 	EntFireHandle(player, "Color","25 75 255")
-
+	Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")
+	
 	if( player.GetTeam() == 2 )
 	{foreach( i, p in list_players_tt ) if( p == player ) list_players_tt.remove(i)}
 	else if( player.GetTeam() == 3 ){foreach( i, p in list_players_ct ) if( p == player ) list_players_ct.remove(i)}
@@ -47,15 +54,16 @@ function SetupPlayers()
 	{
 		Chat(" Counter-Terrorist Win")
 		EntFire("roundEnd", "EndRound_CounterTerroristsWin", "5")
-		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")
+		//Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")
 	}
 	
 	else if( list_players_ct.len() == 0 )
 	{
 		Chat(" Terrorist Win")
 		EntFire("roundEnd", "EndRound_TerroristsWin", "5")	
-		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")		
+		//Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")		
 	}
+	
 }
 
 ::FreezeTag_revivePlayer <- function( player )
@@ -79,20 +87,46 @@ function SetupPlayers()
 	local name = player.GetScriptScope().name
 	local attacker = VS.GetHandleByUserid(data.attacker)
 	
-	ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has lost " + (data.dmg_health) + " health.")
+	// same team
+	if( player.GetTeam() == attacker.GetTeam() )
+	{
+		attacker.SetHealth( health + dmg_health )
+	
+		if( data.weapon == "knife" )
+		{
+			if( player.GetScriptScope().frozen )
+			{
+				FreezeTag_revivePlayer( player )
+			}
+		}
+	}
+	
+	// opposite team
+	else
+	{	
+		ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has lost " + (data.dmg_health) + " health.")
 
-    if( data.health  <= 850 && player.GetScriptScope().frozen == false )
-    {
-		::FreezeTag_freezePlayer(player)
-		ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been frozen by " + attacker.GetScriptScope().name + ".")
-		EntFire( "addKill", "ApplyScore", "", 0, attacker )
-    }
+		if( data.health  <= 850 && player.GetScriptScope().frozen == false )
+		{
+			::FreezeTag_freezePlayer(player)
+			ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been frozen by " + attacker.GetScriptScope().name + ".")
+			EntFire( "addKill", "ApplyScore", "", 0, attacker )
+		}
+	}
+}
+
+::OnGameEvent_round_start <- function(data)
+{
+	::list_players_tt <- []
+	::list_players_ct <- []
+	local ent
+	while( ent = Entities.FindByClassname(ent,"*") ) if( ent.GetClassname() == "player" ) try(delete ent.GetScriptScope().frozen)catch(e){}
 }
 
 ::OnGameEvent_item_pickup <- function(data)
 {
+	return
 	local player = VS.GetHandleByUserid(data.userid)
-	local name = player.GetScriptScope().name
 	
 	if(player.GetScriptScope().frozen == true)
 	{
