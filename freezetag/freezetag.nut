@@ -22,7 +22,7 @@ function SetupPlayers( ent )
 		EntFire("revivedWeapons", "Use","" , 0, ent);
 		EntFireHandle(ent, "Color","255 255 255")
 		EntFireHandle(ent, "SetDamageFilter", "")
-		delay( "Chat(\" \" + VS.Entity.FindByString(\""+ent+"\").GetScriptScope().name + \" spawned.\")", 0.1 )
+		delay( "printl(\" \" + VS.Entity.FindByString(\""+ent+"\").GetScriptScope().name + \" spawned.\")", 0.1 )
 		if( ent.GetTeam() == 2 ) list_players_tt.append(ent)
 		else if( ent.GetTeam() == 3 ) list_players_ct.append(ent)
 	}
@@ -58,7 +58,7 @@ function SetupPlayers( ent )
 		EntFire("roundEnd", "EndRound_TerroristsWin", "5")	
 		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")		
 	}
-	
+
 }
 
 ::FreezeTag_revivePlayer <- function( player )
@@ -84,13 +84,13 @@ function SetupPlayers( ent )
 	local attacker = VS.GetHandleByUserid(data.attacker)
 	
 	// same team
-if( player.GetTeam() == attacker.GetTeam() )
+	if( attacker && player.GetTeam() == attacker.GetTeam() )
 	{
 		local hp = data.health + data.dmg_health
 	
 		if( data.weapon == "knife" )
 		{
-			if( player.GetScriptScope().frozen && data.health <= 999)
+			if( player.GetScriptScope().frozen && data.health <= 950)
 			{
 				hp += 2 * data.dmg_health
 			}
@@ -103,7 +103,6 @@ if( player.GetTeam() == attacker.GetTeam() )
 
 		if(hp>1000)hp=1000
 		{
-		FreezeTag_revivePlayer(player)
 		player.SetHealth(hp)
 		}
 	}
@@ -129,7 +128,7 @@ if( player.GetTeam() == attacker.GetTeam() )
 	::list_players_ct <- []
 	local ent
 	while( ent = Entities.FindByClassname(ent,"*") ) if( ent.GetClassname() == "player" ) try(delete ent.GetScriptScope().frozen)catch(e){}
-    DoEntFire("scmd", "Command", "mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 99999999; mp_td_dmgtowarn 99999999; mp_td_spawndmgthreshold 99999999; ff_damage_reduction_other 0.1;sv_kick_ban_duration 0  " , 0.00, activator, null)
+    DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 99999999; mp_td_dmgtowarn 99999999; mp_td_spawndmgthreshold 99999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0  " , 0.00, activator, null)
 
 }
 
