@@ -23,23 +23,32 @@ function SetupPlayers( ent )
 		EntFireHandle(ent, "Color","255 255 255")
 		EntFireHandle(ent, "SetDamageFilter", "")
 		delay( "printl(\" \" + VS.Entity.FindByString(\""+ent+"\").GetScriptScope().name + \" spawned.\")", 0.1 )
+		
 		if( ent.GetTeam() == 2 ) list_players_tt.append(ent)
 		else if( ent.GetTeam() == 3 ) list_players_ct.append(ent)
+		
+		/*scope.Kill <- function()
+		{
+			EntFireHandle( timer, "kill" )
+			EntFire( "hurt", "hurt", "", 0, self )
+		}*/
 	}
 	
 }
 
 ::FreezeTag_freezePlayer <- function( player )
 {
-	player.GetScriptScope().frozen = true
+	local scope = player.GetScriptScope()
+	player.scope().frozen = true
 
 	local freezeFloat = 0
 	EntFire("freezeSpeedmod", "ModifySpeed", freezeFloat.tostring(), 0, player)
 	EntFire("stripWeapons", "Use","" , 0, player);
-	EntFireHandle(player, "Color","25 75 255")
 	EntFireHandle(player, "SetDamageFilter", "disableBullets")
 	EntFireHandle(player, "Color","25 75 255")
 	
+	//scope.timer <- VS.Timer.Create(null,1)
+	//VS.Timer.OnTimer( scope.timer, "Kill", scope )
 	
 	if( player.GetTeam() == 2 )
 	{foreach( i, p in list_players_tt ) if( p == player ) list_players_tt.remove(i)}
@@ -63,7 +72,8 @@ function SetupPlayers( ent )
 
 ::FreezeTag_revivePlayer <- function( player )
 {
-	player.GetScriptScope().frozen = false
+	local scope = player.GetScriptScope()
+	player.scope().frozen = false
 
 	local reviveFloat = 1
 	player.SetHealth(1000)
@@ -71,9 +81,10 @@ function SetupPlayers( ent )
 	EntFire("revivedWeapons", "Use","" , 0, player);
 	EntFireHandle(player, "Color","255 255 255")
 	EntFireHandle(player, "SetDamageFilter", "")
+	//EntFireHandle( scope.timer, "kill" )
+	
 	if( player.GetTeam() == 2 ) list_players_tt.append(player)
 	else if( player.GetTeam() == 3 ) list_players_ct.append(player)
-	
 }
 
 ::OnGameEvent_player_hurt <- function( data )
@@ -115,9 +126,10 @@ function SetupPlayers( ent )
 		if( data.health  <= 850 && player.GetScriptScope().frozen == false )
 		{
 			player.SetHealth(750)
-			::FreezeTag_freezePlayer(player)
+			FreezeTag_freezePlayer(player)
 			ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been frozen by " + attacker.GetScriptScope().name + ".")
 			EntFire( "addKill", "ApplyScore", "", 0, attacker )
+			//kill after 1 minute
 		}
 	}
 }
