@@ -16,28 +16,49 @@ function SetupPlayers( ent )
 
 		// your custom slots
 		scope.frozen <- false
-
+		scope.hp <- 100
+		scope.Kill <- function()
+		{
+			EntFireHandle( timer, "kill" )
+			EntFire( "hurt", "hurt", "", 0, self )
+		}
+		
+		scope.game_text <- VS.Entity.CreateGameText(null, 
+		{
+			// channel = 1,
+			// color = "100 100 100",
+			// color2 = "240 110 0",
+			// effect = 0,
+			// fadein = 1.5,
+			// fadeout = 0.5,
+			// fxtime = 0.25,
+			holdtime = 0.2,
+			// x = -1,
+			// y = -1,
+			// spawnflags = 0,
+			// message = ""
+		})
+		
+		//player properties
 		ent.SetMaxHealth(1000)
 		ent.SetHealth(1000)
 		EntFire("revivedWeapons", "Use","" , 0, ent);
 		EntFireHandle(ent, "Color","255 255 255")
 		EntFireHandle(ent, "SetDamageFilter", "")
+		
+		//message
 		delay( "printl(\" \" + VS.Entity.FindByString(\""+ent+"\").GetScriptScope().name + \" spawned.\")", 0.1 )
 		
+		//teamlist
 		if( ent.GetTeam() == 2 ) list_players_tt.append(ent)
 		else if( ent.GetTeam() == 3 ) list_players_ct.append(ent)
-		
-		/*scope.Kill <- function()
-		{
-			EntFireHandle( timer, "kill" )
-			EntFire( "hurt", "hurt", "", 0, self )
-		}*/
 	}
 	
 }
 
 ::FreezeTag_freezePlayer <- function( player )
 {
+	
 	local scope = player.GetScriptScope()
 	player.scope().frozen = true
 
@@ -47,8 +68,8 @@ function SetupPlayers( ent )
 	EntFireHandle(player, "SetDamageFilter", "disableBullets")
 	EntFireHandle(player, "Color","25 75 255")
 	
-	//scope.timer <- VS.Timer.Create(null,1)
-	//VS.Timer.OnTimer( scope.timer, "Kill", scope )
+	scope.timer <- VS.Timer.Create(null,1)
+	VS.Timer.OnTimer( scope.timer, "Kill", scope )
 	
 	if( player.GetTeam() == 2 )
 	{foreach( i, p in list_players_tt ) if( p == player ) list_players_tt.remove(i)}
@@ -81,7 +102,7 @@ function SetupPlayers( ent )
 	EntFire("revivedWeapons", "Use","" , 0, player);
 	EntFireHandle(player, "Color","255 255 255")
 	EntFireHandle(player, "SetDamageFilter", "")
-	//EntFireHandle( scope.timer, "kill" )
+	EntFireHandle( scope.timer, "kill" )
 	
 	if( player.GetTeam() == 2 ) list_players_tt.append(player)
 	else if( player.GetTeam() == 3 ) list_players_ct.append(player)
@@ -139,9 +160,29 @@ function SetupPlayers( ent )
 	::list_players_tt <- []
 	::list_players_ct <- []
 	local ent
-	while( ent = Entities.FindByClassname(ent,"*") ) if( ent.GetClassname() == "player" ) try(delete ent.GetScriptScope().frozen)catch(e){}
+		while( ent = Entities.FindByClassname(ent,"*") ) if( ent.GetClassname() == "player" ){
+		local scope = ent.GetScriptScope()
+		try{
+			delete scope.frozen
+			scope.game_text.Destroy()
+			delete scope.game_text
+		}catch(e){}
     DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 99999999; mp_td_dmgtowarn 99999999; mp_td_spawndmgthreshold 99999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0  " , 0.00, activator, null)
+}
 
+function OnPostSpawn()
+{
+	VS.Timer.OnTimer( VS.Timer.Create(null,0.2), "GameText_Think", this )
+}
+
+function GameText_Think()
+{
+	local ent
+	while( ent = Entities.FindByClassname(ent,"player") )
+	{
+		local scope = ent.GetScriptScope()
+		VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+scope.hp )
+	}
 }
 
 ::OnGameEvent_item_pickup <- function(data)
