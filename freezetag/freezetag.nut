@@ -94,7 +94,7 @@ function SetupPlayers( ent )
 ::FreezeTag_revivePlayer <- function( player )
 {
 	local scope = player.GetScriptScope()
-	player.scope().frozen = false
+	scope.frozen = false
 
 	local reviveFloat = 1
 	player.SetHealth(1000)
@@ -160,15 +160,17 @@ function SetupPlayers( ent )
 	::list_players_tt <- []
 	::list_players_ct <- []
 	local ent
-		while( ent = Entities.FindByClassname(ent,"*") ) if( ent.GetClassname() == "player" ){
+	while( ent = Entities.FindByClassname(ent,"*") ) if( ent.GetClassname() == "player" ){
 		local scope = ent.GetScriptScope()
 		try{
 			delete scope.frozen
 			scope.game_text.Destroy()
 			delete scope.game_text
 		}catch(e){}
-    DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 99999999; mp_td_dmgtowarn 99999999; mp_td_spawndmgthreshold 99999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0  " , 0.00, activator, null)
+	}
+	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 99999999; mp_td_dmgtowarn 99999999; mp_td_spawndmgthreshold 99999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0  " , 0.00, activator, null)
 }
+
 
 function OnPostSpawn()
 {
@@ -183,6 +185,17 @@ function GameText_Think()
 		local scope = ent.GetScriptScope()
 		VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+scope.hp )
 	}
+}
+
+function VS::Entity::CreateGameText( targetname = "", kv = null )
+{
+	targetname = GetUniqueName( targetname, "game_text" )
+	return Create("game_text", targetname, kv)
+}
+
+function SetMessage( hEnt, msg )
+{
+	VS.Entity.SetKey( hEnt, "message", msg )
 }
 
 ::OnGameEvent_item_pickup <- function(data)
