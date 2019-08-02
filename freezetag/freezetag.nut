@@ -60,7 +60,7 @@ function SetupPlayers( ent )
 {
 	
 	local scope = player.GetScriptScope()
-	player.scope().frozen = true
+	scope.frozen = true
 
 	local freezeFloat = 0
 	EntFire("freezeSpeedmod", "ModifySpeed", freezeFloat.tostring(), 0, player)
