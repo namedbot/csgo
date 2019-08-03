@@ -14,16 +14,24 @@ function SetupPlayers( ent )
 	{
 		// adds userid/networkid/name
 		VS.ValidateUserid( ent )
-
+		
+		//player properties
+		ent.SetMaxHealth(1000)
+		ent.SetHealth(1000)
+		EntFire("revivedWeapons", "Use","" , 0, ent);
+		EntFireHandle(ent, "Color","255 255 255")
+		EntFireHandle(ent, "SetDamageFilter", "")
+		
 		// your custom slots
 		scope.frozen <- false
-		scope.hp <- 1000
 		scope.Kill <- function()
 		{
+			local targetname = UniqueString("player")
+			VS.Entity.SetName( self, targetname )
+			VS.Entity.SetKeyString( hurt, "DamageTarget", targetname )
 			EntFireHandle( timer, "kill" )
-			hurt.SetOrigin(self.GetOrigin())
 			EntFire( "hurt", "hurt" )
-			delay("hurt.SetOrigin(Vector(-10000,-10000,-10000))")
+			EntFire( "addKill", "ApplyScore", "", 0, self )
 		}
 		
 		scope.game_text <- VS.Entity.CreateGameText(null, 
@@ -68,7 +76,7 @@ function SetupPlayers( ent )
 	local freezeFloat = 0
 	EntFire("freezeSpeedmod", "ModifySpeed", freezeFloat.tostring(), 0, player)
 	EntFire("stripWeapons", "Use","" , 0, player);
-	//EntFireHandle(player, "SetDamageFilter", "disableBullets")
+	EntFireHandle(player, "SetDamageFilter", "disableBullets")
 	EntFireHandle(player, "Color","25 75 255")	
 	scope.timer <- VS.Timer.Create(null,5)
 	VS.Timer.OnTimer( scope.timer, "Kill", scope )
@@ -170,7 +178,7 @@ function SetupPlayers( ent )
 			delete scope.game_text
 		}catch(e){}
 	}
-	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0  " , 0.00, activator, null)
+	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0; mp_warmuptime 5  " , 0.00, activator, null)
 }
 
 function OnPostSpawn()
@@ -184,7 +192,11 @@ function GameText_Think()
 	while( ent = Entities.FindByClassname(ent,"player") )
 	{
 		local scope = ent.GetScriptScope()
-		try( VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+scope.hp ) ) catch(e){}
+		
+		try{
+			VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+ ( ent.GetHealth() - 850 ) )
+			EntFireHandle( scope.game_text, "display", "", 0, ent )
+		}catch(e){}
 	}
 }
 
@@ -201,7 +213,7 @@ function SetMessage( hEnt, msg )
 
 ::OnGameEvent_item_pickup <- function(data)
 {
-	return
+	
 	local player = VS.GetHandleByUserid(data.userid)
 	
 	if(player.GetScriptScope().frozen == true)
