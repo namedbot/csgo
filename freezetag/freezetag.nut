@@ -1,5 +1,6 @@
 IncludeScript("vs_library")
 Chat(" FreezeTest Loaded")
+::hurt <- Entities.FindByName(null,"hurt")
 
 function SetupPlayers( ent )
 {
@@ -20,7 +21,7 @@ function SetupPlayers( ent )
 		scope.Kill <- function()
 		{
 			EntFireHandle( timer, "kill" )
-			hurt.SetOrigin(player.GetOrigin())
+			hurt.SetOrigin(self.GetOrigin())
 			EntFire( "hurt", "hurt" )
 			delay("hurt.SetOrigin(Vector(-10000,-10000,-10000))")
 		}
@@ -68,7 +69,6 @@ function SetupPlayers( ent )
 	EntFire("freezeSpeedmod", "ModifySpeed", freezeFloat.tostring(), 0, player)
 	EntFire("stripWeapons", "Use","" , 0, player);
 	//EntFireHandle(player, "SetDamageFilter", "disableBullets")
-	
 	EntFireHandle(player, "Color","25 75 255")	
 	scope.timer <- VS.Timer.Create(null,5)
 	VS.Timer.OnTimer( scope.timer, "Kill", scope )
@@ -170,7 +170,7 @@ function SetupPlayers( ent )
 			delete scope.game_text
 		}catch(e){}
 	}
-	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 99999999; mp_td_dmgtowarn 99999999; mp_td_spawndmgthreshold 99999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0  " , 0.00, activator, null)
+	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0  " , 0.00, activator, null)
 }
 
 function OnPostSpawn()
