@@ -7,7 +7,7 @@ function SetupPlayers( ent )
 
 	ent.ValidateScriptScope()
 	local scope = ent.GetScriptScope()
-
+	
 	// if the player is not set up
 	if( !("frozen" in scope) )
 	{
@@ -16,11 +16,13 @@ function SetupPlayers( ent )
 
 		// your custom slots
 		scope.frozen <- false
-		scope.hp <- 100
+		scope.hp <- 1000
 		scope.Kill <- function()
 		{
 			EntFireHandle( timer, "kill" )
-			EntFire( "hurt", "hurt", "", 0, self )
+			hurt.SetOrigin(player.GetOrigin())
+			EntFire( "hurt", "hurt" )
+			delay("hurt.SetOrigin(Vector(-10000,-10000,-10000))")
 		}
 		
 		scope.game_text <- VS.Entity.CreateGameText(null, 
@@ -65,10 +67,10 @@ function SetupPlayers( ent )
 	local freezeFloat = 0
 	EntFire("freezeSpeedmod", "ModifySpeed", freezeFloat.tostring(), 0, player)
 	EntFire("stripWeapons", "Use","" , 0, player);
-	EntFireHandle(player, "SetDamageFilter", "disableBullets")
-	EntFireHandle(player, "Color","25 75 255")
+	//EntFireHandle(player, "SetDamageFilter", "disableBullets")
 	
-	scope.timer <- VS.Timer.Create(null,1)
+	EntFireHandle(player, "Color","25 75 255")	
+	scope.timer <- VS.Timer.Create(null,5)
 	VS.Timer.OnTimer( scope.timer, "Kill", scope )
 	
 	if( player.GetTeam() == 2 )
@@ -150,7 +152,7 @@ function SetupPlayers( ent )
 			FreezeTag_freezePlayer(player)
 			ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been frozen by " + attacker.GetScriptScope().name + ".")
 			EntFire( "addKill", "ApplyScore", "", 0, attacker )
-			//kill after 1 minute
+		
 		}
 	}
 }
@@ -171,7 +173,6 @@ function SetupPlayers( ent )
 	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 99999999; mp_td_dmgtowarn 99999999; mp_td_spawndmgthreshold 99999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0  " , 0.00, activator, null)
 }
 
-
 function OnPostSpawn()
 {
 	VS.Timer.OnTimer( VS.Timer.Create(null,0.2), "GameText_Think", this )
@@ -183,7 +184,7 @@ function GameText_Think()
 	while( ent = Entities.FindByClassname(ent,"player") )
 	{
 		local scope = ent.GetScriptScope()
-		VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+scope.hp )
+		try( VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+scope.hp ) ) catch(e){}
 	}
 }
 
