@@ -46,7 +46,7 @@ function SetupPlayers( ent )
 			// fxtime = 0.25,
 			holdtime = 0.2,
 			x = 0.1,
-			y = 0.9,
+			y = 0.5,
 			// spawnflags = 0,
 			// message = ""
 		})
@@ -190,15 +190,15 @@ function GameText_Think()
 	{
 		local scope = ent.GetScriptScope()
 		
+		
 	    if (scope.frozen == true)
         {
 			EntFireHandle( scope.game_text, "display", "", 0, ent )
-			EntFireHandle(scope.game_text, "SetText", "Frozen")	
+			EntFireHandle(scope.game_text, "SetText", "Frozen\n" + list_players_tt.len() + " Terrorists left\n" + list_players_ct.len() + " Counter-Terrorists Left")	
         }
 		
-		VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+ ( ent.GetHealth() - 850 ) )
+		VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+ ( ent.GetHealth() - 850 )) 
 		EntFireHandle( scope.game_text, "display", "", 0, ent )
-	
 	}
 }
 
