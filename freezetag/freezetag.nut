@@ -1,11 +1,11 @@
 IncludeScript("vs_library")
-Chat(" FreezeTest Loaded")
+Chat(" FreezeTag Loaded")
 ::hurt <- Entities.FindByName(null,"hurt")
+
 
 function SetupPlayers( ent )
 {
 	if( ent.GetClassname() != "player" ) return
-
 	ent.ValidateScriptScope()
 	local scope = ent.GetScriptScope()
 	
@@ -32,20 +32,21 @@ function SetupPlayers( ent )
 			EntFireHandle( timer, "kill" )
 			EntFire( "hurt", "hurt" )
 			EntFire( "addKill", "ApplyScore", "", 0, self )
+			ScriptPrintMessageChatTeam(self.GetTeam(), " A teammate froze to death.")
 		}
 		
 		scope.game_text <- VS.Entity.CreateGameText(null, 
 		{
-			// channel = 1,
-			// color = "100 100 100",
+			channel = 3,
+			color = "220 90 90",
 			// color2 = "240 110 0",
 			// effect = 0,
 			// fadein = 1.5,
 			// fadeout = 0.5,
 			// fxtime = 0.25,
 			holdtime = 0.2,
-			// x = -1,
-			// y = -1,
+			x = 0.1,
+			y = 0.9,
 			// spawnflags = 0,
 			// message = ""
 		})
@@ -58,18 +59,16 @@ function SetupPlayers( ent )
 		EntFireHandle(ent, "SetDamageFilter", "")
 		
 		//message
-		delay( "printl(\" \" + VS.Entity.FindByString(\""+ent+"\").GetScriptScope().name + \" spawned.\")", 0.1 )
+		delay( "printl(\" \" + VS.Entity.FindByString(\""+ent+"\").GetScriptScope().name + \" spawned.\")", 0.1 )
 		
 		//teamlist
 		if( ent.GetTeam() == 2 ) list_players_tt.append(ent)
 		else if( ent.GetTeam() == 3 ) list_players_ct.append(ent)
 	}
-	
 }
 
 ::FreezeTag_freezePlayer <- function( player )
 {
-	
 	local scope = player.GetScriptScope()
 	scope.frozen = true
 
@@ -77,7 +76,9 @@ function SetupPlayers( ent )
 	EntFire("freezeSpeedmod", "ModifySpeed", freezeFloat.tostring(), 0, player)
 	EntFire("stripWeapons", "Use","" , 0, player);
 	EntFireHandle(player, "SetDamageFilter", "disableBullets")
-	EntFireHandle(player, "Color","25 75 255")	
+	EntFireHandle(player, "Color","25 75 255")
+	EntFireHandle(scope.game_text, "SetTextColor", "25 75 255")	
+	
 	scope.timer <- VS.Timer.Create(null,5)
 	VS.Timer.OnTimer( scope.timer, "Kill", scope )
 	
@@ -98,7 +99,6 @@ function SetupPlayers( ent )
 		EntFire("roundEnd", "EndRound_TerroristsWin", "5")	
 		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")		
 	}
-
 }
 
 ::FreezeTag_revivePlayer <- function( player )
@@ -112,7 +112,8 @@ function SetupPlayers( ent )
 	EntFire("revivedWeapons", "Use","" , 0, player);
 	EntFireHandle(player, "Color","255 255 255")
 	EntFireHandle(player, "SetDamageFilter", "")
-	EntFireHandle( scope.timer, "kill" )
+	EntFireHandle(scope.timer, "kill" )
+	EntFireHandle(scope.game_text, "SetTextColor", "220 90 90")	
 	
 	if( player.GetTeam() == 2 ) list_players_tt.append(player)
 	else if( player.GetTeam() == 3 ) list_players_ct.append(player)
@@ -140,27 +141,23 @@ function SetupPlayers( ent )
 			{
 				FreezeTag_revivePlayer(player)
 			}
-			
 		}
 
 		if(hp>1000)hp=1000
 		{
-		player.SetHealth(hp)
+			player.SetHealth(hp)
 		}
 	}
 	
 	// opposite team
 	else
-	{	
-		ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has lost " + (data.dmg_health) + " health.")
-
+	{			
 		if( data.health  <= 850 && player.GetScriptScope().frozen == false )
 		{
 			player.SetHealth(750)
 			FreezeTag_freezePlayer(player)
 			ScriptPrintMessageChatTeam(player.GetTeam(), " ● " + name + " has been frozen by " + attacker.GetScriptScope().name + ".")
 			EntFire( "addKill", "ApplyScore", "", 0, attacker )
-		
 		}
 	}
 }
@@ -193,10 +190,15 @@ function GameText_Think()
 	{
 		local scope = ent.GetScriptScope()
 		
-		try{
-			VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+ ( ent.GetHealth() - 850 ) )
+	    if (scope.frozen == true)
+        {
 			EntFireHandle( scope.game_text, "display", "", 0, ent )
-		}catch(e){}
+			EntFireHandle(scope.game_text, "SetText", "Frozen")	
+        }
+		
+		VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+ ( ent.GetHealth() - 850 ) )
+		EntFireHandle( scope.game_text, "display", "", 0, ent )
+	
 	}
 }
 
@@ -213,7 +215,6 @@ function SetMessage( hEnt, msg )
 
 ::OnGameEvent_item_pickup <- function(data)
 {
-	
 	local player = VS.GetHandleByUserid(data.userid)
 	
 	if(player.GetScriptScope().frozen == true)
