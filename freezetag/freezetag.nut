@@ -79,7 +79,7 @@ function SetupPlayers( ent )
 	EntFireHandle(player, "Color","25 75 255")
 	EntFireHandle(scope.game_text, "SetTextColor", "25 75 255")	
 	
-	scope.timer <- VS.Timer.Create(null,5)
+	scope.timer <- VS.Timer.Create(null,50)
 	VS.Timer.OnTimer( scope.timer, "Kill", scope )
 	
 	if( player.GetTeam() == 2 )
@@ -88,14 +88,14 @@ function SetupPlayers( ent )
 	
 	if( list_players_tt.len() == 0 )
 	{
-		Chat(" Counter-Terrorist Win")
+		Chat(" Counter-Terrorist Win")
 		EntFire("roundEnd", "EndRound_CounterTerroristsWin", "5")
 		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")
 	}
 	
 	else if( list_players_ct.len() == 0 )
 	{
-		Chat(" Terrorist Win")
+		Chat(" 	Terrorist Win")
 		EntFire("roundEnd", "EndRound_TerroristsWin", "5")	
 		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")		
 	}
@@ -144,9 +144,7 @@ function SetupPlayers( ent )
 		}
 
 		if(hp>1000)hp=1000
-		{
-			player.SetHealth(hp)
-		}
+		player.SetHealth(hp)
 	}
 	
 	// opposite team
@@ -194,7 +192,7 @@ function GameText_Think()
 	    if (scope.frozen == true)
         {
 			EntFireHandle( scope.game_text, "display", "", 0, ent )
-			EntFireHandle(scope.game_text, "SetText", "Frozen\n" + list_players_tt.len() + " Terrorists left\n" + list_players_ct.len() + " Counter-Terrorists Left")	
+			EntFireHandle(scope.game_text, "SetText", "You are Frozen!\n" + list_players_tt.len() + " Terrorists left.\n" + list_players_ct.len() + " Counter-Terrorists Left.")	
         }
 		
 		VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+ ( ent.GetHealth() - 850 )) 
@@ -206,11 +204,6 @@ function VS::Entity::CreateGameText( targetname = "", kv = null )
 {
 	targetname = GetUniqueName( targetname, "game_text" )
 	return Create("game_text", targetname, kv)
-}
-
-function SetMessage( hEnt, msg )
-{
-	VS.Entity.SetKey( hEnt, "message", msg )
 }
 
 ::OnGameEvent_item_pickup <- function(data)
