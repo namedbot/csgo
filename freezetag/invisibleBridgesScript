@@ -1,0 +1,85 @@
+IncludeScript("vs_library")
+SendToConsole ("say Invisible Bridges Loaded")
+::SMain <- this
+
+//------------------------------
+//
+// player_say
+//
+// Example 1.1: Execute script code on chat commands.
+// Does not require vs_library.
+//
+// Example 1.2: Changing the player health
+// Requirements:
+//    vs_library
+//    logic_eventlistener : player_say
+//    logic_eventlistener : player_info
+//    logic_eventlistener : player_connect
+//
+//-------------------------------
+
+::OnGameEvent_player_say <- function( data )
+{
+	local msg = data.text
+	HPlayer <- VS.GetSoloPlayer();
+
+	if( msg.slice(0,1) != "!") return
+	SMain.say_cmd( msg.slice(1).tolower() )
+}
+
+function say_cmd( str )
+{
+	local buffer = split(str, " ")
+	local val, cmd = buffer[0]
+	try( val = buffer[1] ) catch(e){}
+
+	switch( cmd.tolower() )
+	{
+	
+		case "see":
+		case "goggles":
+			gogglesOn()
+			break
+			
+		case "play":
+		case "nogoggles":
+			gogglesOff()
+			break
+
+		case "r":
+		case "reset":
+			resetPlayer()
+			break
+			
+		case "help":
+			//help command()
+			break
+
+
+		default:
+			printl("Invalid command.")
+	}
+}
+
+function resetPlayer()
+{
+	local pos = HPlayer.GetOrigin()
+	pos.x = 0
+	pos.y = 0
+	pos.z = 0
+	HPlayer.SetOrigin(pos)
+}
+
+function gogglesOn()
+{
+	Chat(" Goggles On")
+	EntFire("bridge*", "Disable","" , 0, self)
+	EntFire("visibridge*", "Enable","" , 0, self)
+}
+
+function gogglesOff()
+{
+	Chat(" Goggles Off")
+	EntFire("bridge*", "Enable","" , 0, self)
+	EntFire("visibridge*", "Disable","" , 0, self)
+}
