@@ -32,7 +32,7 @@ function SetupPlayers( ent )
 			EntFireHandle( timer, "kill" )
 			EntFire( "hurt", "hurt" )
 			EntFire( "addKill", "ApplyScore", "", 0, self )
-			ScriptPrintMessageChatTeam(self.GetTeam(), " A teammate froze to death.")
+			ScriptPrintMessageChatTeam(self.GetTeam(), " " + name + " froze to death.")
 		}
 		
 		scope.game_text <- VS.Entity.CreateGameText(null, 
@@ -90,14 +90,14 @@ function SetupPlayers( ent )
 	{
 		Chat(" Counter-Terrorist Win")
 		EntFire("roundEnd", "EndRound_CounterTerroristsWin", "5")
-		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")
+		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists left")
 	}
 	
 	else if( list_players_ct.len() == 0 )
 	{
 		Chat(" 	Terrorist Win")
 		EntFire("roundEnd", "EndRound_TerroristsWin", "5")	
-		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists Left")		
+		Chat(" " + list_players_tt.len() + " 	Terrorists left " + list_players_ct.len() + " Counter-Terrorists left")		
 	}
 }
 
@@ -130,21 +130,21 @@ function SetupPlayers( ent )
 	if( attacker && player.GetTeam() == attacker.GetTeam() )
 	{
 		local hp = data.health + data.dmg_health
-	
+
 		if( data.weapon == "knife" )
 		{
-			if( player.GetScriptScope().frozen && data.health <= 950)
+			if( player.GetScriptScope().frozen )
 			{
-				hp += 2 * data.dmg_health
-			}
-			else if( player.GetScriptScope().frozen )
-			{
-				FreezeTag_revivePlayer(player)
+				if( data.health <= 950 )
+					hp += 2 * data.dmg_health
+
+				if( hp >= 1000 )
+					FreezeTag_revivePlayer(player)
 			}
 		}
 
 		if(hp>1000)hp=1000
-		player.SetHealth(hp)
+			player.SetHealth(hp)
 	}
 	
 	// opposite team
@@ -192,18 +192,12 @@ function GameText_Think()
 	    if (scope.frozen == true)
         {
 			EntFireHandle( scope.game_text, "display", "", 0, ent )
-			EntFireHandle(scope.game_text, "SetText", "You are Frozen!\n" + list_players_tt.len() + " Terrorists left.\n" + list_players_ct.len() + " Counter-Terrorists Left.")	
+			EntFireHandle(scope.game_text, "SetText", "You are Frozen!\n" + list_players_tt.len() + " Terrorists left.\n" + list_players_ct.len() + " Counter-Terrorists left.")	
         }
 		
 		VS.Entity.SetKeyString( scope.game_text, "message", "HP: "+ ( ent.GetHealth() - 850 )) 
 		EntFireHandle( scope.game_text, "display", "", 0, ent )
 	}
-}
-
-function VS::Entity::CreateGameText( targetname = "", kv = null )
-{
-	targetname = GetUniqueName( targetname, "game_text" )
-	return Create("game_text", targetname, kv)
 }
 
 ::OnGameEvent_item_pickup <- function(data)
@@ -216,4 +210,4 @@ function VS::Entity::CreateGameText( targetname = "", kv = null )
 	}
 }
 
-//ScriptPrintMessageChatTeam(2, "   - light red 2 -  violet - blue - light blue	 - T color - CT color - light red - green(money awards) - light green - green - Team color - red - white - gold")
+//Chat("   - light red 2 -  violet - blue - light blue	 - T color - CT color - light red - green(money awards) - light green - green - Team color - red - white - gold")
