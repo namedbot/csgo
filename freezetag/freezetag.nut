@@ -14,14 +14,7 @@ function SetupPlayers( ent )
 	{
 		// adds userid/networkid/name
 		VS.ValidateUserid( ent )
-		
-		//player properties
-		ent.SetMaxHealth(1000)
-		ent.SetHealth(1000)
-		EntFire("revivedWeapons", "Use","" , 0, ent);
-		EntFireHandle(ent, "Color","255 255 255")
-		EntFireHandle(ent, "SetDamageFilter", "")
-		
+			
 		// your custom slots
 		scope.frozen <- false
 		scope.Kill <- function()
