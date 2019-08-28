@@ -10,6 +10,24 @@ VS.GetSoloPlayer();
 //    logic_eventlistener : player_death
 
 
+function SetupPlayers( ent )
+{
+	if( ent.GetClassname() != "player" ) return
+	ent.ValidateScriptScope()
+	local scope = ent.GetScriptScope()
+
+	// if the player is not set up
+	if( !("loaded" in scope) )
+	{
+		// adds userid/networkid/name
+		scope.loaded <- true
+		VS.ValidateUserid( ent )
+		
+		if( ent.GetTeam() == 3 ) EntFire("CTWeps", "Use","" , 0, ent)}
+			
+	}
+}
+
 ::OnGameEvent_player_death <- function(data)
 {
 	local player = VS.GetHandleByUserid(data.userid)
@@ -92,20 +110,3 @@ function commandFunction()
 }
 
 
-function SetupPlayers( ent )
-{
-	if( ent.GetClassname() != "player" ) return
-	ent.ValidateScriptScope()
-	local scope = ent.GetScriptScope()
-
-	// if the player is not set up
-	if( !("loaded" in scope) )
-	{
-		// adds userid/networkid/name
-		scope.loaded <- true
-		VS.ValidateUserid( ent )
-		
-		if( ent.GetTeam() == 3 ) EntFire("CTWeps", "Use","" , 0, ent)}
-			
-	}
-}
