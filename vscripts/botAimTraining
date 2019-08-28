@@ -1,0 +1,111 @@
+IncludeScript("vs_library")
+::SMain <- this;
+VS.GetSoloPlayer();
+
+// Requirements:
+//    vs_library
+//    logic_eventlistener : player_say
+//    logic_eventlistener : player_info
+//    logic_eventlistener : player_connect
+//    logic_eventlistener : player_death
+
+
+::OnGameEvent_player_death <- function(data)
+{
+	local player = VS.GetHandleByUserid(data.userid)
+	if( player.GetTeam() == 3 ) 
+	{
+		stop()
+	}
+}
+
+
+::OnGameEvent_player_say <- function( data )
+{
+	local msg = data.text
+
+	if( msg.slice(0,1) != "!") return
+	SMain.say_cmd( msg.slice(1).tolower() )
+}
+
+function say_cmd( str )
+{
+	local buffer = split(str, " ")
+	local val, cmd = buffer[0]
+	try( val = buffer[1] ) catch(e){}
+
+	switch( cmd.tolower() )
+	{
+	
+		case "p":
+		case "play":
+		case "start":
+			play()
+			break
+		case "r":
+		case "stop":
+		case "reset":
+		case "spawn":
+			stop()
+			break			
+		case "help":
+			//help command()
+			break
+		default:
+			Chat("Invalid command.")
+	}
+}
+
+::play <- function()
+{
+EntFire("startTeleTrig", "Enable","" , 0, self)
+EntFire("resetTele", "Disable","" , 0, self)
+DoEntFire("scmd", "Command", "bot_stop 0" , 0.00, self, null)
+}
+
+::stop <- function()
+{
+EntFire("startTeleTrig", "Disable","" , 0, self)
+EntFire("resetTele", "Enable","" , 0, self)
+EntFire("easymodeButton", "Unlock","" , 0, self)
+EntFire("hardmodeButton", "Unlock","" , 0, self)
+EntFire("easymodeButton", "PresstOut","" , 0.03, self)
+EntFire("hardmodeButton", "PresstOut","" , 0.03, self)
+EntFire("terrorTele", "Enable","" , 0, self)
+DoEntFire("scmd", "Command", "bot_stop 1" , 0.00, self, null)
+}
+
+function resetPlayer()
+{
+	local pos = HPlayer.GetOrigin()
+	pos.x = 0
+	pos.y = 3072
+	pos.z = -184
+	HPlayer.SetOrigin(pos)
+}
+
+function commandFunction()
+{
+	Chat(" Bot Aim Training Loaded")
+	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; sv_kick_ban_duration 0; mp_warmuptime 0;bot_knives_only 1;bot_stop 0;bot_max_vision_distance_override 1; mp_autoteambalance 0;mp_buytime 99999999  " , 0.00, activator, null)
+	DoEntFire("scmd", "Command", "mp_limitteams 0;mp_maxmoney 65535 ;mp_afterroundmoney 65535 ; mp_startmoney 65535; sv_cheats 1; mp_buy_anywhere 1; mp_respawn_on_death_t 1; mp_respawn_on_death_ct 1; mp_roundtime 60; sv_infinite_ammo 2; bot_stop 1" , 0.00, activator, null)
+}
+
+
+function SetupPlayers( ent )
+{
+	if( ent.GetClassname() != "player" ) return
+	ent.ValidateScriptScope()
+	local scope = ent.GetScriptScope()
+
+	// if the player is not set up
+	if( !("loaded" in scope) )
+	{
+		// adds userid/networkid/name
+		scope.loaded <- true
+		VS.ValidateUserid( ent )
+		
+		if( ent.GetTeam() == 3 ) EntFire("CTWeps", "Use","" , 0, ent)}
+			
+	}
+}
