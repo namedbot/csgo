@@ -32,10 +32,13 @@ function OnImpact(player)
 	if (scope.goggles == false)
 	{
 		gogglesOn()
-		delay( "scope.goggles = true", 0.1 )
+		scope.goggles = true
 	}
-	gogglesOff()
-	delay( "scope.goggles = false", 0.1 )
+	else
+	{
+		gogglesOff()
+		scope.goggles = false
+	}
 }
 
 ::OnGameEvent_bullet_impact <- function( data )
