@@ -1,8 +1,7 @@
 IncludeScript("vs_library")
-Chat("Invisible Bridges Loaded")
 ::SMain <- this;
 VS.GetSoloPlayer();
-SPlayer.goggles <- false
+::s <- this
 
 // Requirements:
 //    vs_library
@@ -11,13 +10,52 @@ SPlayer.goggles <- false
 //    logic_eventlistener : player_connect
 //    logic_eventlistener : bullet_impact
 
+function SetupPlayers( ent )
+{
+	if( ent.GetClassname() != "player" ) return
+	ent.ValidateScriptScope()
+	local scope = ent.GetScriptScope()
+
+	// if the player is not set up
+	if( !("goggles" in scope) )
+	{
+		// adds userid/networkid/name
+		VS.ValidateUserid( ent )
+		scope.goggles <- false
+		Chat("Invisible Bridges Loaded")
+	}
+}
+
+function OnImpact(player)
+{
+	local scope = player.GetScriptScope()
+	if (scope.goggles == false)
+	{
+		gogglesOn()
+		delay( "scope.goggles = true", 0.1 )
+	}
+	gogglesOff()
+	delay( "scope.goggles = false", 0.1 )
+}
+
 ::OnGameEvent_bullet_impact <- function( data )
 {
-	if (SPlayer.goggles == false)
-	{
-	gogglesOn()
-	}
-	googlesOff()	
+	local player = VS.GetHandleByUserid(data.userid)
+	s.OnImpact(player)
+}
+
+function gogglesOn()
+{
+	Chat(" Goggles On")
+	EntFire("bridge*", "Disable")
+	EntFire("visibridge*", "Enable")
+}
+
+function gogglesOff()
+{
+	Chat(" Goggles Off")
+	EntFire("bridge*", "Enable")
+	EntFire("visibridge*", "Disable")
 }
 
 ::OnGameEvent_player_say <- function( data )
@@ -59,25 +97,6 @@ function say_cmd( str )
 
 function resetPlayer()
 {
-	local pos = HPlayer.GetOrigin()
-	pos.x = 0
-	pos.y = 0
-	pos.z = 0
+	local pos = Vector(0,0,0)
 	HPlayer.SetOrigin(pos)
-}
-
-function gogglesOn()
-{
-	Chat(" Goggles On")
-	EntFire("bridge*", "Disable","" , 0, self)
-	EntFire("visibridge*", "Enable","" , 0, self)
-	SPlayer.goggles = true
-}
-
-function gogglesOff()
-{
-	Chat(" Goggles Off")
-	EntFire("bridge*", "Enable","" , 0, self)
-	EntFire("visibridge*", "Disable","" , 0, self)
-	SPlayer.goggles = false
 }
