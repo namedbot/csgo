@@ -1,6 +1,5 @@
 IncludeScript("vs_library")
 ::SMain <- this;
-VS.GetSoloPlayer();
 
 // Requirements:
 //    vs_library
@@ -9,39 +8,17 @@ VS.GetSoloPlayer();
 //    logic_eventlistener : player_connect
 //    logic_eventlistener : player_death
 
-
-function SetupPlayers( ent )
-{
-	if( ent.GetClassname() != "player" ) return
-	ent.ValidateScriptScope()
-	local scope = ent.GetScriptScope()
-
-	// if the player is not set up
-	if( !("loaded" in scope) )
-	{
-		// adds userid/networkid/name
-		scope.loaded <- true
-		VS.ValidateUserid( ent )
-		
-		if( ent.GetTeam() == 3 ) EntFire("CTWeps", "Use","" , 0, ent)}
-			
-	}
-}
-
 ::OnGameEvent_player_death <- function(data)
 {
-	local player = VS.GetHandleByUserid(data.userid)
-	if( player.GetTeam() == 3 ) 
+	if( data.userid == SPlayer.userid ) 
 	{
 		stop()
 	}
 }
 
-
 ::OnGameEvent_player_say <- function( data )
 {
 	local msg = data.text
-
 	if( msg.slice(0,1) != "!") return
 	SMain.say_cmd( msg.slice(1).tolower() )
 }
@@ -51,10 +28,8 @@ function say_cmd( str )
 	local buffer = split(str, " ")
 	local val, cmd = buffer[0]
 	try( val = buffer[1] ) catch(e){}
-
 	switch( cmd.tolower() )
 	{
-	
 		case "p":
 		case "play":
 		case "start":
@@ -65,6 +40,11 @@ function say_cmd( str )
 		case "reset":
 		case "spawn":
 			stop()
+			break	
+		case "c":
+		case "clear":
+		case "cleardecals":
+			clearDecals()
 			break			
 		case "help":
 			//help command()
@@ -76,37 +56,108 @@ function say_cmd( str )
 
 ::play <- function()
 {
-EntFire("startTeleTrig", "Enable","" , 0, self)
-EntFire("resetTele", "Disable","" , 0, self)
-DoEntFire("scmd", "Command", "bot_stop 0" , 0.00, self, null)
+EntFire("resetTele", "Disable")
+EntFire("startTeleTrig", "Enable")
+EntFire("scmd", "Command", "bot_stop 0")
+SendToConsole("r_cleardecals")
+EntFire("terrorTele", "Enable")
+EntFire("terrorTele", "Disable","" , 0.02)
 }
 
 ::stop <- function()
 {
-EntFire("startTeleTrig", "Disable","" , 0, self)
-EntFire("resetTele", "Enable","" , 0, self)
-EntFire("easymodeButton", "Unlock","" , 0, self)
-EntFire("hardmodeButton", "Unlock","" , 0, self)
-EntFire("easymodeButton", "PresstOut","" , 0.03, self)
-EntFire("hardmodeButton", "PresstOut","" , 0.03, self)
-EntFire("terrorTele", "Enable","" , 0, self)
-DoEntFire("scmd", "Command", "bot_stop 1" , 0.00, self, null)
+//resetPlayer()
+EntFire("resetTele", "Enable")
+EntFire("terrorTele", "Enable")
+EntFire("startTeleTrig", "Disable")
+EntFire("easymodeButton", "Unlock")
+EntFire("hardmodeButton", "Unlock")
+EntFire("easymodeButton", "PresstOut","" , 0.05)
+EntFire("hardmodeButton", "PresstOut","" , 0.05)
+EntFire("scmd", "Command", "bot_stop 1")
+EntFire("terrorTele", "Disable")
+}
+
+function clearDecals()
+{
+	SendToConsole("r_cleardecals")
+ 	Chat(" Decals Cleared")
 }
 
 function resetPlayer()
 {
-	local pos = HPlayer.GetOrigin()
-	pos.x = 0
-	pos.y = 3072
-	pos.z = -184
+	local pos = Vector(0,0,0)
 	HPlayer.SetOrigin(pos)
+}
+
+hpData <- [
+    [1, "255 0 0"],
+    [10, "230 0 0"],
+    [20, "231 47 0"],
+    [30, "233 94 0"],
+	[40, "233 142 1"],
+	[50, "235 190 1"],
+	[60, "234 236 2"],
+	[70, "188 237 2"],
+	[80, "141 239 3"],
+	[90, "94 240 3"],
+	[100, "47 241 4"],
+	[110, "5 243 9"],
+	[120, "5 244 58"],
+	[130, "6 245 107"],
+	[140, "6 247 156"],
+	[150, "7 248 206"],
+	[160, "7 242 249"],
+	[170, "8 194 251"],
+	[180, "8 142 252"],
+	[190, "10 100 253"],
+	[200, "10 50 255"],
+	];
+
+hpIndex <- 10
+function botHP(bot)
+{
+    bot.SetMaxHealth(hpData.top()[0]) // gets the hp value of the last entry
+    bot.SetHealth(hpData[hpIndex][0]) // gets the hp value of the current index
+}
+
+function botHPadd()
+{
+    hpIndex++
+    if (hpIndex >= hpData.len()) // safety check so index doesn't go out of bounds
+    {
+        hpIndex = hpData.len() - 1
+    }
+	EntFire("botHPTextadd", "AddOutput","Color 35 170 5")
+	EntFire("botHPTextadd", "AddOutput","Color 255 255 255", 0.2)
+	
+    EntFire("botHPText", "AddOutput","Message " + hpData[hpIndex][0]) // get the current hp value from the array
+    botHPTextColor()
+}
+
+function botHPsub()
+{
+    hpIndex--
+    if(hpIndex < 0) // safety check so index doesn't go out of bounds
+    {
+        hpIndex = 0
+    }
+	EntFire("botHPTextsub", "AddOutput","Color 210 0 10")
+	EntFire("botHPTextsub", "AddOutput","Color 255 255 255", 0.2)
+    EntFire("botHPText", "AddOutput","Message " + hpData[hpIndex][0]) // get the current hp value from the array
+    botHPTextColor()
+}
+
+function botHPTextColor()
+{
+    EntFire("botHPText", "AddOutput","Color " + hpData[hpIndex][1]) // get the current color value from the array
 }
 
 function commandFunction()
 {
 	Chat(" Bot Aim Training Loaded")
 	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; sv_kick_ban_duration 0; mp_warmuptime 0;bot_knives_only 1;bot_stop 0;bot_max_vision_distance_override 1; mp_autoteambalance 0;mp_buytime 99999999  " , 0.00, activator, null)
-	DoEntFire("scmd", "Command", "mp_limitteams 0;mp_maxmoney 65535 ;mp_afterroundmoney 65535 ; mp_startmoney 65535; sv_cheats 1; mp_buy_anywhere 1; mp_respawn_on_death_t 1; mp_respawn_on_death_ct 1; mp_roundtime 60; sv_infinite_ammo 2; bot_stop 1" , 0.00, activator, null)
+	DoEntFire("scmd", "Command", "mp_limitteams 0;mp_maxmoney 65535 ;mp_afterroundmoney 65535 ; mp_startmoney 65535; sv_cheats 1; mp_buy_anywhere 1; mp_respawn_on_death_t 1; mp_respawn_on_death_ct 1; mp_roundtime 60; sv_infinite_ammo 2; bot_stop 1; achievement_disable 1; mp_playercashawards 0; mp_radar_showall 1" , 0.00, activator, null)
 }
 
-
+//Chat("   - light red 2 -  violet - blue - light blue	 - T color - CT color - light red - green(money awards) - light green - green - Team color - red - white - gold")
