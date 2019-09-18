@@ -17,43 +17,43 @@
 				"roger"
 				{
 					"hotkey"	"1"
-					"label"	"Save Checkpoint 1"
+					"label"	"Save Checkpoint"
 					"cmd"	"script saveP(); snd_playsounds Buttons.snd14"
 				}
 
 				"negative"
 				{
 					"hotkey"	"2"
-					"label"	"Load Checkpoint 1"
+					"label"	"Load Checkpoint"
 					"cmd"	"script teleP(); snd_playsounds Buttons.snd14"
 				}
 
 				"needbackup"
 				{
 					"hotkey"	"3"
-					"label"	""
-					"cmd"	"script blank()"
+					"label"	"Load Last Checkpoint"
+					"cmd"	"script teleP2(); snd_playsounds Buttons.snd14"
 				}
 
 				"holdpos"
 				{
 					"hotkey"	"4"
-					"label"	"Save Checkpoint 2" 
-					"cmd"	"script saveP2(); snd_playsounds Buttons.snd14"
+					"label"	"" 
+					"cmd"	"script blank(); snd_playsounds Buttons.snd14"
 				}
 
 				"thanks"
 				{
 					"hotkey"	"5"
-					"label"	"Load Checkpoint 2"
-					"cmd"	"script teleP2(); snd_playsounds Buttons.snd14"
+					"label"	""
+					"cmd"	"script blank(); snd_playsounds Buttons.snd14"
 				}
 
 				"cheer"
 				{
 					"hotkey"	"6"
-					"label"	""
-					"cmd"	"script blank()"
+					"label"	"God Mode"
+					"cmd"	"sv_cheats 1; god;script blank(); snd_playsounds Buttons.snd14"
 				}	
 
 				"sorry"
@@ -74,7 +74,7 @@
 				{
 					"hotkey"	"9"
 					"label"	"Script SETUP"
-					"cmd"	"sv_cheats 1; bot_kick; mp_autokick 0; mp_autoteambalance 0; mp_roundtime 60; mp_freezetime 0; sv_accelerate 5.5; mp_respawn_on_death_ct 1; mp_respawn_on_death_t 1; mp_solid_teammates 0; god; mp_restartgame 1; mp_warmup_end; sv_airaccelerate 150; script_execute teleportScript;sv_staminajumpcost 0; sv_staminalandcost 0; sv_staminamax 0; sv_staminarecoveryrate 0; sv_enablebunnyhopping 1; sv_autobunnyhopping 1;  snd_playsounds Buttons.snd14"
+					"cmd"	"script_execute teleportScript; script SetupScript();  snd_playsounds Buttons.snd14"
 				}	
 			}
 		}
@@ -83,7 +83,7 @@
 		{
 			"hotkey"	"2"
 			"title"	"Mapping Commands"
-			"timeout"	"5"
+			"timeout"	"15"
 			
 			"Commands"
 			{
@@ -157,7 +157,7 @@
 		{
 			"hotkey"	"3"
 			"title"	"Surf/Bhop Commands"
-			"timeout"	"5"
+			"timeout"	"15"
 			
 			"Commands"
 			{
