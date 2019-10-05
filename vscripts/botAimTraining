@@ -1,5 +1,8 @@
 IncludeScript("vs_library")
 ::SMain <- this;
+::s <- this
+
+
 
 // Requirements:
 //    vs_library
@@ -8,12 +11,13 @@ IncludeScript("vs_library")
 //    logic_eventlistener : player_connect
 //    logic_eventlistener : player_death
 
-::OnGameEvent_player_death <- function(data)
+////////////////////////////////////////
+/////////////////Events/////////////////
+////////////////////////////////////////
+
+function playerDeath()
 {
-	if( data.userid == SPlayer.userid ) 
-	{
-		stop()
-	}
+	stop()
 }
 
 ::OnGameEvent_player_say <- function( data )
@@ -47,35 +51,39 @@ function say_cmd( str )
 			clearDecals()
 			break			
 		case "help":
-			//help command()
+			help()
 			break
 		default:
 			Chat("Invalid command.")
 	}
 }
 
+////////////////////////////////////////
+///////////////Functions////////////////
+////////////////////////////////////////
+
 ::play <- function()
 {
+SendToConsole("r_cleardecals")
 EntFire("resetTele", "Disable")
 EntFire("startTeleTrig", "Enable")
 EntFire("scmd", "Command", "bot_stop 0")
-SendToConsole("r_cleardecals")
 EntFire("terrorTele", "Enable")
-EntFire("terrorTele", "Disable","" , 0.02)
+EntFire("terrorTele", "Disable","" , 0.05)
+difficultyChecker()
+resetScore()
+scoreDisplay()
 }
 
 ::stop <- function()
 {
-//resetPlayer()
+s.resetPlayer()
 EntFire("resetTele", "Enable")
 EntFire("terrorTele", "Enable")
 EntFire("startTeleTrig", "Disable")
-EntFire("easymodeButton", "Unlock")
-EntFire("hardmodeButton", "Unlock")
-EntFire("easymodeButton", "PresstOut","" , 0.05)
-EntFire("hardmodeButton", "PresstOut","" , 0.05)
 EntFire("scmd", "Command", "bot_stop 1")
 EntFire("terrorTele", "Disable")
+EntFire("scoreParent", "SetParent","")
 }
 
 function clearDecals()
@@ -90,74 +98,215 @@ function resetPlayer()
 	HPlayer.SetOrigin(pos)
 }
 
+difficultyCheck <- 0
+function difficultyAdd()
+{
+	difficultyCheck++
+}
+
+function difficultySub()
+{
+	difficultyCheck--
+}
+
+::difficultyChecker <- function()
+{
+	if (difficultyCheck <= 0)
+	{
+		EntFire("easymodeButton", "PressIn")
+	}
+}
+
+function SetupPlayers( ent )
+{
+	if( ent.GetClassname() != "player" ) return
+	ent.ValidateScriptScope()
+	local scope = ent.GetScriptScope()
+	
+	// if the player is not set up
+	if( !("loaded" in scope) )
+	{
+		// adds userid/networkid/name
+		VS.ValidateUserid( ent )
+		scope.loaded <- true
+	}
+}
+
+botCount <- 10
+function KickBot( input )
+{
+	VS.DumpScope(input.GetScriptScope())
+	local name = input.GetScriptScope().name
+	
+	foreach( bot in VS.GetPlayersAndBots()[1] )
+	{
+		local n = bot.GetScriptScope().name
+		if( n == name )
+		{
+			SendToConsole("bot_kick " + n)
+		}
+	}
+}
+
+function removeBot()
+{
+	botCount--
+	if(botCount < 0)
+    {
+		botCount++
+    }
+	botCountfunc()
+}
+
+function addBot()
+{
+	botCount++
+	SendToConsole("bot_add_t")
+	if(botCount >= 11)
+    {
+		botCount--
+    }
+	botCountfunc()
+}
+
+////////////////////////////////////////
+//////////////////Text//////////////////
+////////////////////////////////////////
+
+botCountText <- Entities.FindByName(null,"botCountText")
+function botCountfunc()
+{
+	botCountText.__KeyValueFromInt("message", botCount)
+}
+
+score <- 0
+function addScore()
+{
+	s.score++
+	s.scoreDisplay()
+}
+
+prevScoreTextNum <- Entities.FindByName(null,"prevScoreTextNum")
+scoreDisplayTextNum <- Entities.FindByName(null,"scoreDisplayTextNum")
+function scoreDisplay()
+{
+	scoreDisplayTextNum.__KeyValueFromInt("message", score)
+	prevScoreTextNum.__KeyValueFromInt("message", score)
+}
+
+function resetScore()
+{
+	score = 0
+}
+
 hpData <- [
-    [1, "255 0 0"],
-    [10, "230 0 0"],
-    [20, "231 47 0"],
-    [30, "233 94 0"],
-	[40, "233 142 1"],
-	[50, "235 190 1"],
-	[60, "234 236 2"],
-	[70, "188 237 2"],
-	[80, "141 239 3"],
-	[90, "94 240 3"],
-	[100, "47 241 4"],
-	[110, "5 243 9"],
-	[120, "5 244 58"],
-	[130, "6 245 107"],
-	[140, "6 247 156"],
-	[150, "7 248 206"],
-	[160, "7 242 249"],
-	[170, "8 194 251"],
-	[180, "8 142 252"],
-	[190, "10 100 253"],
-	[200, "10 50 255"],
+    [1, "255 0 0"],[10, "230 0 0"],[20, "231 47 0"],[30, "233 94 0"],[40, "233 142 1"],[50, "235 190 1"],[60, "234 236 2"],[70, "188 237 2"],[80, "141 239 3"],[90, "94 240 3"],[100, "47 241 4"],[110, "5 243 9"],[120, "5 244 58"],[130, "6 245 107"],[140, "6 247 156"],[150, "7 248 206"],[160, "7 242 249"],[170, "8 194 251"],[180, "8 142 252"],[190, "10 100 253"],[200, "10 50 255"],
 	];
 
-hpIndex <- 10
+botHPText <- Entities.FindByName(null,"botHPText")
+botHPIndex <- 10
 function botHP(bot)
 {
     bot.SetMaxHealth(hpData.top()[0]) // gets the hp value of the last entry
-    bot.SetHealth(hpData[hpIndex][0]) // gets the hp value of the current index
+    bot.SetHealth(hpData[botHPIndex][0]) // gets the hp value of the current index
 }
 
 function botHPadd()
 {
-    hpIndex++
-    if (hpIndex >= hpData.len()) // safety check so index doesn't go out of bounds
+    botHPIndex++
+    if (botHPIndex >= hpData.len()) // safety check so index doesn't go out of bounds
     {
-        hpIndex = hpData.len() - 1
+        botHPIndex = hpData.len() - 1
     }
 	EntFire("botHPTextadd", "AddOutput","Color 35 170 5")
 	EntFire("botHPTextadd", "AddOutput","Color 255 255 255", 0.2)
-	
-    EntFire("botHPText", "AddOutput","Message " + hpData[hpIndex][0]) // get the current hp value from the array
+    botHPText.__KeyValueFromInt("message", hpData[botHPIndex][0])// get the current hp value from the array
     botHPTextColor()
 }
 
 function botHPsub()
 {
-    hpIndex--
-    if(hpIndex < 0) // safety check so index doesn't go out of bounds
+    botHPIndex--
+    if(botHPIndex < 0) // safety check so index doesn't go out of bounds
     {
-        hpIndex = 0
+        botHPIndex = 0
     }
 	EntFire("botHPTextsub", "AddOutput","Color 210 0 10")
 	EntFire("botHPTextsub", "AddOutput","Color 255 255 255", 0.2)
-    EntFire("botHPText", "AddOutput","Message " + hpData[hpIndex][0]) // get the current hp value from the array
+	botHPText.__KeyValueFromInt("message", hpData[botHPIndex][0])// get the current hp value from the array
     botHPTextColor()
 }
 
 function botHPTextColor()
 {
-    EntFire("botHPText", "AddOutput","Color " + hpData[hpIndex][1]) // get the current color value from the array
+    botHPText.__KeyValueFromString("color", hpData[botHPIndex][1]) // get the current color value from the array
+}
+
+playerHPText <- Entities.FindByName(null,"playerHPText")
+playerHPIndex <- 10
+function playerHP(p)
+{
+    p.SetMaxHealth(hpData.top()[0]) // gets the hp value of the last entry
+    p.SetHealth(hpData[playerHPIndex][0]) // gets the hp value of the current index
+}
+
+function playerHPadd()
+{
+    playerHPIndex++
+    if (playerHPIndex >= hpData.len()) // safety check so index doesn't go out of bounds
+    {
+        playerHPIndex = hpData.len() - 1
+    }
+	EntFire("playerHPTextadd", "AddOutput","Color 35 170 5")
+	EntFire("playerHPTextadd", "AddOutput","Color 255 255 255", 0.2)
+	playerHPText.__KeyValueFromInt("message", hpData[playerHPIndex][0])// get the current hp value from the array
+    playerHPTextColor()
+}
+
+function playerHPsub()
+{
+    playerHPIndex--
+    if(playerHPIndex < 0) // safety check so index doesn't go out of bounds
+    {
+        playerHPIndex = 0
+    }
+	EntFire("playerHPTextsub", "AddOutput","Color 210 0 10")
+	EntFire("playerHPTextsub", "AddOutput","Color 255 255 255", 0.2)
+    playerHPText.__KeyValueFromInt("message", hpData[playerHPIndex][0])// get the current hp value from the array
+    playerHPTextColor()
+}
+
+function playerHPTextColor()
+{
+	playerHPText.__KeyValueFromString("color", hpData[playerHPIndex][1]) // get the current color value from the array
+}
+
+////////////////////////////////////////
+////////////////Commands////////////////
+////////////////////////////////////////
+
+function help()
+{
+	Chat("Type !c or !clear to clear decals.")
+	Chat("!p or !play will start the round.")
+	Chat("!r or !reset to return back to the main room.")
+
+}
+
+function NamedPlayer()
+{
+	Chat(" Created by NamedPlayer with help from SamXZ.")
 }
 
 function commandFunction()
 {
-	Chat(" Bot Aim Training Loaded")
+	Chat(" Bot training loaded. Type !help in chat for help.")
 	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; sv_kick_ban_duration 0; mp_warmuptime 0;bot_knives_only 1;bot_stop 0;bot_max_vision_distance_override 1; mp_autoteambalance 0;mp_buytime 99999999  " , 0.00, activator, null)
-	DoEntFire("scmd", "Command", "mp_limitteams 0;mp_maxmoney 65535 ;mp_afterroundmoney 65535 ; mp_startmoney 65535; sv_cheats 1; mp_buy_anywhere 1; mp_respawn_on_death_t 1; mp_respawn_on_death_ct 1; mp_roundtime 60; sv_infinite_ammo 2; bot_stop 1; achievement_disable 1; mp_playercashawards 0; mp_radar_showall 1" , 0.00, activator, null)
+	DoEntFire("scmd", "Command", "mp_limitteams 0;mp_maxmoney 65535 ;mp_afterroundmoney 65535 ; mp_startmoney 65535; sv_cheats 1; mp_buy_anywhere 1; mp_respawn_on_death_t 1; mp_respawn_on_death_ct 1; mp_roundtime 60; sv_infinite_ammo 2; bot_stop 1; achievement_disable 1; mp_playercashawards 0; mp_radar_showall 1; mp_drop_knife_enable 1;mp_solid_teammates 0; bot_dont_shoot 1" , 0.00, activator, null)
 }
 
+function commandBhop()
+{
+	DoEntFire("scmd", "Command", "sv_staminajumpcost 0; sv_staminalandcost 0; sv_staminamax 0; sv_staminarecoveryrate 0; sv_enablebunnyhopping 1; sv_autobunnyhopping 1;sv_airaccelerate 250;sv_timebetweenducks 0; sv_accelerate_use_weapon_speed 0;" , 0.00, activator, null)
+}
 //Chat("   - light red 2 -  violet - blue - light blue	 - T color - CT color - light red - green(money awards) - light green - green - Team color - red - white - gold")
