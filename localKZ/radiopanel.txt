@@ -18,63 +18,63 @@
 				{
 					"hotkey"	"1"
 					"label"	"Save Checkpoint"
-					"cmd"	"script saveP()"
+					"cmd"	"script saveP(); snd_playsounds Buttons.snd14"
 				}
 
 				"negative"
 				{
 					"hotkey"	"2"
 					"label"	"Load Checkpoint"
-					"cmd"	"script teleP()"
+					"cmd"	"script teleP(); snd_playsounds Buttons.snd14"
 				}
 
 				"needbackup"
 				{
 					"hotkey"	"3"
 					"label"	"Load Last Checkpoint"
-					"cmd"	"script teleP2()"
+					"cmd"	"script teleP2(); snd_playsounds Buttons.snd14"
 				}
 
 				"holdpos"
 				{
 					"hotkey"	"4"
 					"label"	"Hide Hud" 
-					"cmd"	"script hideHud()"
+					"cmd"	"script hideHud(); snd_playsounds Buttons.snd14"
 				}
 
 				"thanks"
 				{
 					"hotkey"	"5"
 					"label"	"Change FOV"
-					"cmd"	"script playerFOV()"
+					"cmd"	"script playerFOV(); snd_playsounds Buttons.snd14"
 				}
 
 				"cheer"
 				{
 					"hotkey"	"6"
 					"label"	"God Mode"
-					"cmd"	"god;script blank()"
+					"cmd"	"god;script blank(); snd_playsounds Buttons.snd14"
 				}	
 
 				"sorry"
 				{
 					"hotkey"	"7"
 					"label"	"Reset"
-					"cmd"	"script kzReset()"
+					"cmd"	"script kzReset(); snd_playsounds Buttons.snd14"
 				}	
 
 				"go"
 				{
 					"hotkey"	"8"
 					"label"	"Set Spawn"
-					"cmd"	"script setSpawn()"
+					"cmd"	"script setSpawn(); snd_playsounds Buttons.snd14"
 				}
 
 				"askfordrop"
 				{
 					"hotkey"	"9"
 					"label"	"Script SETUP"
-					"cmd"	"script_execute teleportScript; script SetupScript()"
+					"cmd"	"script_execute teleportScript; script SetupScript(); snd_playsounds Buttons.snd14"
 				}	
 			}
 		}
