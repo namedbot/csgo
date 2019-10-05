@@ -38,22 +38,22 @@
 				"holdpos"
 				{
 					"hotkey"	"4"
-					"label"	"" 
-					"cmd"	"script blank()"
+					"label"	"Hide Hud" 
+					"cmd"	"script hideHud()"
 				}
 
 				"thanks"
 				{
 					"hotkey"	"5"
-					"label"	""
-					"cmd"	"script blank()"
+					"label"	"Change FOV"
+					"cmd"	"script playerFOV()"
 				}
 
 				"cheer"
 				{
 					"hotkey"	"6"
 					"label"	"God Mode"
-					"cmd"	"sv_cheats 1; god;script blank()"
+					"cmd"	"god;script blank()"
 				}	
 
 				"sorry"
