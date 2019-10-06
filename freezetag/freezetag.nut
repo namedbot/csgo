@@ -1,5 +1,5 @@
 IncludeScript("vs_library")
-Chat(" FreezeTag Loaded")
+Chat(" Knife your teammates to revive them. If they are frozen for 30 seconds they will die!")
 ::hurt <- Entities.FindByName(null,"hurt")
 
 function SetupPlayers( ent )
@@ -39,10 +39,10 @@ function SetupPlayers( ent )
 			VS.Entity.SetKeyString( hurt, "DamageTarget", tname )
 			EntFire( "hurt", "hurt" )
 			EntFire( "addKill", "ApplyScore", "", 0, self )
-			ScriptPrintMessageChatTeam(self.GetTeam(), " " + name + " froze to death.")
+			ScriptPrintMessageChatTeam(self.GetTeam(), " ● " + name + " froze to death.")
 		}
 
-		scope.timer <- VS.Timer.Create(null,5,0,0,0,1)
+		scope.timer <- VS.Timer.Create(null,30,0,0,0,1)
 		VS.Timer.OnTimer( scope.timer, "Kill", scope )
 
 		scope.game_text <- VS.Entity.CreateGameText(null,
@@ -64,7 +64,7 @@ function SetupPlayers( ent )
 		scope.bot <- scope.networkid == "BOT" ? true : false
 		
 		//message
-		delay( "printl(\" \" + VS.Entity.FindByString(\""+ent+"\").GetScriptScope().name + \" spawned.\")", 0.1 )
+		//delay( "printl(\" \" + VS.Entity.FindByString(\""+ent+"\").GetScriptScope().name + \" spawned.\")", 0.1 )
 
 		//teamlist
 		if( ent.GetTeam() == 2 ) list_players_tt.append(ent)
@@ -74,6 +74,7 @@ function SetupPlayers( ent )
 
 ::FreezeTag_freezePlayer <- function( player )
 {
+
 	local scope = player.GetScriptScope()
 	scope.frozen = true
 
@@ -83,7 +84,7 @@ function SetupPlayers( ent )
 	EntFireHandle(player, "SetDamageFilter", "disableBullets")
 	EntFireHandle(player, "Color","25 75 255")
 	EntFireHandle(scope.game_text, "SetTextColor", "25 75 255")
-	EntFireHandle( scope.timer, "enable" )
+	EntFireHandle(scope.timer, "enable" )
 
 	if( player.GetTeam() == 2 ){foreach( i, p in list_players_tt ) if( p == player ) list_players_tt.remove(i)}
 	else if( player.GetTeam() == 3 ){foreach( i, p in list_players_ct ) if( p == player ) list_players_ct.remove(i)}
@@ -172,7 +173,7 @@ function SetupPlayers( ent )
 		try(delete scope.frozen)catch(e){}
 	}
 
-	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0; mp_warmuptime 5" , 0.00, null, null)
+	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; ff_damage_reduction_other 0.5;sv_kick_ban_duration 0; mp_warmuptime 5; mp_playercashawards 0" , 0.00, null, null)
 }
 
 function OnPostSpawn()
@@ -200,12 +201,11 @@ function GameText_Think()
 	}
 }
 
- ::OnGameEvent_player_death <- function(data)
+::OnGameEvent_player_death <- function(data)
 {
 	local scope = VS.GetHandleByUserid(data.userid).GetScriptScope()
 	EntFireHandle(scope.timer, "kill")
 	EntFireHandle( scope.game_text, "kill", "", 0.7 )
-
 }
 
 ::OnGameEvent_client_disconnect <- function(data)
