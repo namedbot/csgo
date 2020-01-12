@@ -1,8 +1,11 @@
 IncludeScript("vs_library")
-::SMain <- this;
+
+::SMain <- this
 ::s <- this
-
-
+::pos <- Vector(0,0,0)
+::playing <- 0
+const T = 2;
+const CT = 3;
 
 // Requirements:
 //    vs_library
@@ -11,13 +14,31 @@ IncludeScript("vs_library")
 //    logic_eventlistener : player_connect
 //    logic_eventlistener : player_death
 
+
 ////////////////////////////////////////
 /////////////////Events/////////////////
 ////////////////////////////////////////
 
-function playerDeath()
+::OnGameEvent_CT_death <-function()
 {
 	stop()
+	EntFire("CTWepTrig", "Enable")
+}
+
+
+::OnGameEvent_player_hurt <- function(data)
+{
+	EntFire("dmgSound", "PlaySound")
+	test()
+}
+
+::OnGameEvent_T_death <-function(data)
+{
+	if(playing == 1)
+	{
+		s.score++
+		s.scoreDisplay()
+	}
 }
 
 ::OnGameEvent_player_say <- function( data )
@@ -43,6 +64,12 @@ function say_cmd( str )
 		case "stop":
 		case "reset":
 		case "spawn":
+			EntFire("scmd", "Command", "bot_stop 1")
+			stop()
+			resetPlayer()
+			break	
+		case "rr":
+			SendToConsole("mp_restartgame 1")
 			stop()
 			break	
 		case "c":
@@ -51,71 +78,98 @@ function say_cmd( str )
 			clearDecals()
 			break			
 		case "help":
-			help()
+			help() 
 			break
+		case "fov":
+			playerFOV(val)
+			break
+		case "dc":
+		case "exit":
+			leaveGame()
+			stop()
+			break
+		case "bh":				
+		case "bhop":
+			stop()
+			pos = Vector(10240,-4608 ,-2264)
+			s.teleportPlayer()
+			break
+		case "b":
+		case "b1":
+		case "bonus1":
+			stop()
+			pos = Vector(-352,3992,229)  
+			s.teleportPlayer()
+			break
+		case "b2":
+		case "bonus2":
+			stop()
+			pos = Vector(768,3376,168)    
+			s.teleportPlayer()
+			break
+		case "g":
+		case "god":
+			godMode()
+			Chat("God Mode Toggled")
+			break
+		case "nc":
+		case "noclip":
+			SendToConsole("noclip")
+			break
+		case "knife":
+			customKnife(val)
+			break
+		case "model":
+			setModel(val)
+			break		
+		case "h":
+			VS.SetParent( botModel, modelSpinner )
+			break
+			
 		default:
 			Chat("Invalid command.")
 	}
 }
 
+
+////////////////////////////////////////
+////////////////Weapons/////////////////
+////////////////////////////////////////
+
+sWeapCurr <- null;
+
+enum weapon{glock="glock",hkp2000="hkp2000",usp_silencer="usp_silencer",elite="elite",p250="p250",tec9="tec9",deagle="deagle",galilar="galilar",famas="famas",ak47="ak47",m4a1="m4a1",m4a1_silencer="m4a1_silencer",ssg08="ssg08",aug="aug",sg556="sg556",awp="awp",scar20="scar20",g3sg1="g3sg1",nova="nova",xm1014="xm1014",mag7="mag7",m249="m249",negev="negev",mac10="mac10",mp9="mp9",mp7="mp7",ump45="ump45",p90="p90",bizon="bizon",mp5sd="mp5sd",sawedoff="sawedoff",cz75a="cz75a",fiveseven="fiveseven",revolver="revolver",bumpmine="bumpmine"}
+
+function SetTeam(i){VS.SetKeyInt( HPlayer, "teamnumber", i )}
+function Equip( input, player )
+{
+	sWeapCurr = input;
+
+	if(sWeapCurr==weapon.glock||sWeapCurr==weapon.tec9||sWeapCurr==weapon.mac10||sWeapCurr==weapon.galilar||sWeapCurr==weapon.ak47||sWeapCurr==weapon.g3sg1||sWeapCurr==weapon.sg556||sWeapCurr==weapon.sawedoff)
+	SetTeam(T);
+
+	EntFire( "equip", "triggerforactivatedplayer", "weapon_"+input, 0.0, player )
+	delay("SetTeam(CT)")
+}
+
+function customKnife(knife)
+{	
+	if( knife == null)
+	{
+		Chat("● Type !knife <knife name> to use this command.")
+		Chat("● Make sure you have default knives equipped.")
+		Chat("● Possible Names: canis, cord, outdoor, skeleton, css, flip, bayonet, gut, karambit, bayonet, tactical, butterfly, falchion, push, survival_bowie, jackknife, stiletto, widowmaker, ursus, knifegg, ghost, axe, hammer, spanner, fists.")
+	}
+	
+	if(knife == "axe" || knife == "spanner" || knife == "fists")
+	{SendToConsole("game_type 6; give weapon_" + knife + ";ent_fire weapon_knife addoutput \"classname weapon_knifegg\";game_type 0")}
+	
+	SendToConsole("give weapon_knife_" + knife + ";ent_fire weapon_knife addoutput \"classname weapon_knifegg\"")
+}
+
 ////////////////////////////////////////
 ///////////////Functions////////////////
 ////////////////////////////////////////
-
-::play <- function()
-{
-SendToConsole("r_cleardecals")
-EntFire("resetTele", "Disable")
-EntFire("startTeleTrig", "Enable")
-EntFire("scmd", "Command", "bot_stop 0")
-EntFire("terrorTele", "Enable")
-EntFire("terrorTele", "Disable","" , 0.05)
-difficultyChecker()
-resetScore()
-scoreDisplay()
-}
-
-::stop <- function()
-{
-s.resetPlayer()
-EntFire("resetTele", "Enable")
-EntFire("terrorTele", "Enable")
-EntFire("startTeleTrig", "Disable")
-EntFire("scmd", "Command", "bot_stop 1")
-EntFire("terrorTele", "Disable")
-EntFire("scoreParent", "SetParent","")
-}
-
-function clearDecals()
-{
-	SendToConsole("r_cleardecals")
- 	Chat(" Decals Cleared")
-}
-
-function resetPlayer()
-{
-	local pos = Vector(0,0,0)
-	HPlayer.SetOrigin(pos)
-}
-
-difficultyCheck <- 0
-function difficultyAdd()
-{
-	difficultyCheck++
-}
-
-function difficultySub()
-{
-	difficultyCheck--
-}
-
-::difficultyChecker <- function()
-{
-	if (difficultyCheck <= 0)
-	{
-		EntFire("easymodeButton", "PressIn")
-	}
-}
 
 function SetupPlayers( ent )
 {
@@ -132,60 +186,155 @@ function SetupPlayers( ent )
 	}
 }
 
-botCount <- 10
+
+::test <- function()
+{
+	Chat("Test.")
+}
+
+::play <- function()
+{
+playing = 1
+SendToConsole("r_cleardecals")
+EntFire("resetTele", "Disable")
+EntFire("scmd", "Command", "bot_stop 0")
+EntFire("blockBullets", "Enable")
+EntFire("terrorTele", "Enable")
+EntFire("terrorTele", "Disable","" , 0.05)
+EntFire("bonusButton", "PressOut")
+difficultyChecker()
+fogChecker()
+resetScore()
+s.resetPlayer()
+botModelFunc()
+}
+
+::stop <- function()
+{
+playing = 0
+EntFire("resetTele", "Enable")
+EntFire("terrorTele", "Enable")
+EntFire("blockBullets", "Disable")
+EntFire("terrorTele", "Disable","" , 0.05)
+EntFire("scmd", "Command", "fog_enable 0")
+EntFire("skyboxFog", "Disable")
+EntFire("bonusTele", "Disable")
+EntFire("hardTele", "Disable")
+EntFire("spawnTele", "Disable")
+}
+
+function playerFOV(fov)
+{
+	SendToConsole("fov_cs_debug " + fov)
+}
+
+function leaveGame()
+{
+	EntFire("scmd", "Command", "disconnect \"Change da world. My final message. Goodbye.\"", 7)
+	EntFire("dcSound", "PlaySound")
+}
+
+function clearDecals()
+{
+	SendToConsole("r_cleardecals")
+ 	Chat(" Decals Cleared")
+}
+
+function teleportPlayer()
+{
+	HPlayer.SetOrigin(pos)
+}
+
+function resetPlayer()
+{
+	pos = Vector(0,0,0)
+	s.teleportPlayer()
+}
+
+difficultyCheck <- 0
+::difficultyChecker <- function()
+{
+	if (difficultyCheck <= 0)
+	{
+		EntFire("easymodeButton", "PressIn")
+		EntFire("spawnTele", "Enable")
+	}
+	
+	if( difficultyCheck == 1 && playing == 1)
+	{
+		EntFire("spawnTele", "Enable")
+	}
+	
+	if( difficultyCheck == 2 && playing == 1)
+	{
+		EntFire("hardTele", "Enable")
+	}
+}
+
+fogCheck <- 0
+::fogChecker <- function()
+{
+	if (fogCheck == 1)
+	{
+		EntFire("scmd", "Command", "fog_enable 1")
+		EntFire("skyboxFog", "Enable")
+	}
+}
+
+
+botCount <- VS.GetPlayersAndBots()[1].len()
 function KickBot( input )
 {
-	VS.DumpScope(input.GetScriptScope())
-	local name = input.GetScriptScope().name
+	//VS.DumpScope(input.GetScriptScope())
+	local userid = input.GetScriptScope().userid
 	
 	foreach( bot in VS.GetPlayersAndBots()[1] )
 	{
-		local n = bot.GetScriptScope().name
-		if( n == name )
+		local n = bot.GetScriptScope().userid
+		if( n == userid )
 		{
-			SendToConsole("bot_kick " + n)
+			SendToConsole("kickid " + n)
 		}
 	}
 }
 
-function removeBot()
-{
-	botCount--
-	if(botCount < 0)
-    {
-		botCount++
-    }
-	botCountfunc()
-}
-
-function addBot()
-{
-	botCount++
-	SendToConsole("bot_add_t")
-	if(botCount >= 11)
-    {
-		botCount--
-    }
-	botCountfunc()
-}
 
 ////////////////////////////////////////
 //////////////////Text//////////////////
 ////////////////////////////////////////
 
+red <- "Color 210 0 10"
+green <- "Color 35 170 5"
+function buttonPress(buttonName,color)
+{
+	EntFire(buttonName, "AddOutput", color)
+	EntFire(buttonName, "AddOutput", "Color 255 255 255" , 0.2)
+}
+
+function removeBot()
+{
+	local bots = VS.GetPlayersAndBots()[1]
+	KickBot( bots[0] )
+	SendToConsole("bot_quota " + (bots.len() - 1))
+	botCountfunc()
+	buttonPress("botCountSub",red)
+}
+
+function addBot()
+{
+	SendToConsole("bot_add_t")
+	botCountfunc()
+	buttonPress("botCountAdd",green)
+}
+
 botCountText <- Entities.FindByName(null,"botCountText")
 function botCountfunc()
 {
-	botCountText.__KeyValueFromInt("message", botCount)
+	local bots = VS.GetPlayersAndBots()[1]
+	delay("botCountText.__KeyValueFromInt(\"message\", VS.GetPlayersAndBots()[1].len())", 0.1)
 }
 
 score <- 0
-function addScore()
-{
-	s.score++
-	s.scoreDisplay()
-}
-
 prevScoreTextNum <- Entities.FindByName(null,"prevScoreTextNum")
 scoreDisplayTextNum <- Entities.FindByName(null,"scoreDisplayTextNum")
 function scoreDisplay()
@@ -197,30 +346,30 @@ function scoreDisplay()
 function resetScore()
 {
 	score = 0
+	s.scoreDisplay()
 }
 
 hpData <- [
     [1, "255 0 0"],[10, "230 0 0"],[20, "231 47 0"],[30, "233 94 0"],[40, "233 142 1"],[50, "235 190 1"],[60, "234 236 2"],[70, "188 237 2"],[80, "141 239 3"],[90, "94 240 3"],[100, "47 241 4"],[110, "5 243 9"],[120, "5 244 58"],[130, "6 245 107"],[140, "6 247 156"],[150, "7 248 206"],[160, "7 242 249"],[170, "8 194 251"],[180, "8 142 252"],[190, "10 100 253"],[200, "10 50 255"],
-	];
+];
 
 botHPText <- Entities.FindByName(null,"botHPText")
 botHPIndex <- 10
 function botHP(bot)
 {
-    bot.SetMaxHealth(hpData.top()[0]) // gets the hp value of the last entry
-    bot.SetHealth(hpData[botHPIndex][0]) // gets the hp value of the current index
+    bot.SetMaxHealth(hpData.top()[0])
+    bot.SetHealth(hpData[botHPIndex][0])
 }
 
 function botHPadd()
 {
     botHPIndex++
-    if (botHPIndex >= hpData.len()) // safety check so index doesn't go out of bounds
+    if (botHPIndex >= hpData.len())
     {
         botHPIndex = hpData.len() - 1
     }
-	EntFire("botHPTextadd", "AddOutput","Color 35 170 5")
-	EntFire("botHPTextadd", "AddOutput","Color 255 255 255", 0.2)
-    botHPText.__KeyValueFromInt("message", hpData[botHPIndex][0])// get the current hp value from the array
+	buttonPress("botHPTextadd",green)
+    botHPText.__KeyValueFromInt("message", hpData[botHPIndex][0])
     botHPTextColor()
 }
 
@@ -231,82 +380,288 @@ function botHPsub()
     {
         botHPIndex = 0
     }
-	EntFire("botHPTextsub", "AddOutput","Color 210 0 10")
-	EntFire("botHPTextsub", "AddOutput","Color 255 255 255", 0.2)
-	botHPText.__KeyValueFromInt("message", hpData[botHPIndex][0])// get the current hp value from the array
+	buttonPress("botHPTextsub",red)
+	botHPText.__KeyValueFromInt("message", hpData[botHPIndex][0])
     botHPTextColor()
 }
 
 function botHPTextColor()
 {
-    botHPText.__KeyValueFromString("color", hpData[botHPIndex][1]) // get the current color value from the array
+    botHPText.__KeyValueFromString("color", hpData[botHPIndex][1])
 }
 
 playerHPText <- Entities.FindByName(null,"playerHPText")
 playerHPIndex <- 10
 function playerHP(p)
 {
-    p.SetMaxHealth(hpData.top()[0]) // gets the hp value of the last entry
-    p.SetHealth(hpData[playerHPIndex][0]) // gets the hp value of the current index
+    p.SetMaxHealth(hpData.top()[0]) 
+    p.SetHealth(hpData[playerHPIndex][0]) 
 }
 
 function playerHPadd()
 {
     playerHPIndex++
-    if (playerHPIndex >= hpData.len()) // safety check so index doesn't go out of bounds
+    if (playerHPIndex >= hpData.len()) 
     {
         playerHPIndex = hpData.len() - 1
+		
     }
-	EntFire("playerHPTextadd", "AddOutput","Color 35 170 5")
-	EntFire("playerHPTextadd", "AddOutput","Color 255 255 255", 0.2)
-	playerHPText.__KeyValueFromInt("message", hpData[playerHPIndex][0])// get the current hp value from the array
+	buttonPress("playerHPTextadd",green)
+	playerHPText.__KeyValueFromInt("message", hpData[playerHPIndex][0])
     playerHPTextColor()
 }
 
 function playerHPsub()
 {
     playerHPIndex--
-    if(playerHPIndex < 0) // safety check so index doesn't go out of bounds
+    if(playerHPIndex < 0)
     {
         playerHPIndex = 0
     }
-	EntFire("playerHPTextsub", "AddOutput","Color 210 0 10")
-	EntFire("playerHPTextsub", "AddOutput","Color 255 255 255", 0.2)
-    playerHPText.__KeyValueFromInt("message", hpData[playerHPIndex][0])// get the current hp value from the array
+	buttonPress("playerHPTextsub",red)
+    playerHPText.__KeyValueFromInt("message", hpData[playerHPIndex][0])
     playerHPTextColor()
 }
 
 function playerHPTextColor()
 {
-	playerHPText.__KeyValueFromString("color", hpData[playerHPIndex][1]) // get the current color value from the array
+	playerHPText.__KeyValueFromString("color", hpData[playerHPIndex][1])
 }
+
+namedArray <- [
+    [""],["	"],[""],[""],[""],[""],[""],[""],[""],[""],[""]
+	];
+
+namedIndex <- -1;
+function NamedPlayer()
+{
+	namedIndex++
+	if(namedIndex > 11)
+    {
+        namedIndex = 0
+    }
+	Chat(namedArray[namedIndex][0] + "youtube.com/user/iSpawnedThere/")
+	Chat(namedArray[namedIndex][0] + "steamcommunity.com/id/NamedPlayer/")
+}
+
+function help()
+{
+	Chat("Chat Commands:")
+	Chat("!p will start the round.")
+	Chat("!r to return back to the main room.")
+	Chat("!rr to reset the level.")
+	Chat("!noclip to toggle noclip.")
+	Chat("!knife to use custom knives.")
+	Chat("!c to clear decals.")
+	Chat("!b to teleport to bonus 1.")
+	Chat("!b2 to teleport to bonus 2.")
+	Chat("!bh to teleport to bhop.")
+	Chat("!dc to exit to the main menu.")
+	Chat("!fov <number> to change your Field of view.")
+}
+
+////////////////////////////////////////
+////////////////Models//////////////////
+////////////////////////////////////////
+
+enum MDL
+{
+	FBIa  = "models/player/custom_player/legacy/ctm_fbi_varianta.mdl",
+	FBIb  = "models/player/custom_player/legacy/ctm_fbi_variantb.mdl",
+	FBIc  = "models/player/custom_player/legacy/ctm_fbi_variantc.mdl",
+	FBId  = "models/player/custom_player/legacy/ctm_fbi_variantd.mdl",
+	FBIe  = "models/player/custom_player/legacy/ctm_fbi_variante.mdl",
+	FBIf  = "models/player/custom_player/legacy/ctm_fbi_variantf.mdl",
+	FBIg  = "models/player/custom_player/legacy/ctm_fbi_variantg.mdl",
+	FBIh  = "models/player/custom_player/legacy/ctm_fbi_varianth.mdl",
+
+	GIGNa = "models/player/custom_player/legacy/ctm_gign_varianta.mdl",
+	GIGNb = "models/player/custom_player/legacy/ctm_gign_variantb.mdl",
+	GIGNc = "models/player/custom_player/legacy/ctm_gign_variantc.mdl",
+	GIGNd = "models/player/custom_player/legacy/ctm_gign_variantd.mdl",
+
+	GSG9a = "models/player/custom_player/legacy/ctm_gsg9_varianta.mdl",
+	GSG9b = "models/player/custom_player/legacy/ctm_gsg9_variantb.mdl",
+	GSG9c = "models/player/custom_player/legacy/ctm_gsg9_variantc.mdl",
+	GSG9d = "models/player/custom_player/legacy/ctm_gsg9_variantd.mdl",
+
+	IDFb  = "models/player/custom_player/legacy/ctm_idf_variantb.mdl",
+	IDFc  = "models/player/custom_player/legacy/ctm_idf_variantc.mdl",
+	IDFd  = "models/player/custom_player/legacy/ctm_idf_variantd.mdl",
+	IDFe  = "models/player/custom_player/legacy/ctm_idf_variante.mdl",
+	IDFf  = "models/player/custom_player/legacy/ctm_idf_variantf.mdl",
+
+	SASa  = "models/player/custom_player/legacy/ctm_sas_varianta.mdl",
+	SASb  = "models/player/custom_player/legacy/ctm_sas_variantb.mdl",
+	SASc  = "models/player/custom_player/legacy/ctm_sas_variantc.mdl",
+	SASd  = "models/player/custom_player/legacy/ctm_sas_variantd.mdl",
+	SASe  = "models/player/custom_player/legacy/ctm_sas_variante.mdl",
+	SASf  = "models/player/custom_player/legacy/ctm_sas_variantf.mdl",
+
+	ST6a  = "models/player/custom_player/legacy/ctm_st6_varianta.mdl",
+	ST6b  = "models/player/custom_player/legacy/ctm_st6_variantb.mdl",
+	ST6c  = "models/player/custom_player/legacy/ctm_st6_variantc.mdl",
+	ST6d  = "models/player/custom_player/legacy/ctm_st6_variantd.mdl",
+	ST6e  = "models/player/custom_player/legacy/ctm_st6_variante.mdl",
+	ST6g  = "models/player/custom_player/legacy/ctm_st6_variantg.mdl",
+	ST6i  = "models/player/custom_player/legacy/ctm_st6_varianti.mdl",
+	ST6k  = "models/player/custom_player/legacy/ctm_st6_variantk.mdl",
+	ST6m  = "models/player/custom_player/legacy/ctm_st6_variantm.mdl",
+
+	SWATa = "models/player/custom_player/legacy/ctm_swat_varianta.mdl",
+	SWATb = "models/player/custom_player/legacy/ctm_swat_variantb.mdl",
+	SWATc = "models/player/custom_player/legacy/ctm_swat_variantc.mdl",
+	SWATd = "models/player/custom_player/legacy/ctm_swat_variantd.mdl",
+
+	ANARa = "models/player/custom_player/legacy/tm_anarchist_varianta.mdl",
+	ANARb = "models/player/custom_player/legacy/tm_anarchist_variantb.mdl",
+	ANARc = "models/player/custom_player/legacy/tm_anarchist_variantc.mdl",
+	ANARd = "models/player/custom_player/legacy/tm_anarchist_variantd.mdl",
+
+	BALKa = "models/player/custom_player/legacy/tm_balkan_varianta.mdl",
+	BALKb = "models/player/custom_player/legacy/tm_balkan_variantb.mdl",
+	BALKc = "models/player/custom_player/legacy/tm_balkan_variantc.mdl",
+	BALKd = "models/player/custom_player/legacy/tm_balkan_variantd.mdl",
+	BALKe = "models/player/custom_player/legacy/tm_balkan_variante.mdl",
+	BALKf = "models/player/custom_player/legacy/tm_balkan_variantf.mdl",
+	BALKg = "models/player/custom_player/legacy/tm_balkan_variantg.mdl",
+	BALKh = "models/player/custom_player/legacy/tm_balkan_varianth.mdl",
+	BALKi = "models/player/custom_player/legacy/tm_balkan_varianti.mdl",
+	BALKj = "models/player/custom_player/legacy/tm_balkan_variantj.mdl",
+
+	LEETa = "models/player/custom_player/legacy/tm_leet_varianta.mdl",
+	LEETb = "models/player/custom_player/legacy/tm_leet_variantb.mdl",
+	LEETc = "models/player/custom_player/legacy/tm_leet_variantc.mdl",
+	LEETd = "models/player/custom_player/legacy/tm_leet_variantd.mdl",
+	LEETe = "models/player/custom_player/legacy/tm_leet_variante.mdl",
+	LEETf = "models/player/custom_player/legacy/tm_leet_variantf.mdl",
+	LEETg = "models/player/custom_player/legacy/tm_leet_variantg.mdl",
+	LEETh = "models/player/custom_player/legacy/tm_leet_varianth.mdl",
+	LEETi = "models/player/custom_player/legacy/tm_leet_varianti.mdl",
+
+	PHXa  = "models/player/custom_player/legacy/tm_phoenix_varianta.mdl",
+	PHXb  = "models/player/custom_player/legacy/tm_phoenix_variantb.mdl",
+	PHXc  = "models/player/custom_player/legacy/tm_phoenix_variantc.mdl",
+	PHXd  = "models/player/custom_player/legacy/tm_phoenix_variantd.mdl",
+	PHXf  = "models/player/custom_player/legacy/tm_phoenix_variantf.mdl",
+	PHXg  = "models/player/custom_player/legacy/tm_phoenix_variantg.mdl",
+	PHXh  = "models/player/custom_player/legacy/tm_phoenix_varianth.mdl",
+
+	PRTa  = "models/player/custom_player/legacy/tm_pirate_varianta.mdl",
+	PRTb  = "models/player/custom_player/legacy/tm_pirate_variantb.mdl",
+	PRTc  = "models/player/custom_player/legacy/tm_pirate_variantc.mdl",
+	PRTd  = "models/player/custom_player/legacy/tm_pirate_variantd.mdl",
+
+	PROa  = "models/player/custom_player/legacy/tm_professional_var1.mdl",
+	PROb  = "models/player/custom_player/legacy/tm_professional_var2.mdl",
+	PROc  = "models/player/custom_player/legacy/tm_professional_var3.mdl",
+	PROd  = "models/player/custom_player/legacy/tm_professional_var4.mdl",
+
+	SEPa  = "models/player/custom_player/legacy/tm_separatist_varianta.mdl",
+	SEPb  = "models/player/custom_player/legacy/tm_separatist_variantb.mdl",
+	SEPc  = "models/player/custom_player/legacy/tm_separatist_variantc.mdl",
+	SEPd  = "models/player/custom_player/legacy/tm_separatist_variantd.mdl",
+
+	H_CT  = "models/player/custom_player/legacy/ctm_heavy.mdl",
+	H_T   = "models/player/custom_player/legacy/tm_phoenix_heavy.mdl"
+}
+
+botModelIndex <- 0
+botModelData <- [	
+	[MDL.FBIa],[MDL.FBIb],[MDL.FBIc],[MDL.FBId],[MDL.FBIe],[MDL.FBIf],[MDL.FBIg],[MDL.FBIh],[MDL.GIGNa],[MDL.GIGNb],[ MDL.GIGNc],[MDL.GIGNd],[MDL.GSG9a],[MDL.GSG9b],[MDL.GSG9c],[MDL.GSG9d],[MDL.IDFb],[MDL.IDFc],[MDL.IDFd],[MDL.IDFe],[MDL.IDFf],[MDL.SASa],[MDL.ST6a],[MDL.ST6b],[MDL.ST6c],[MDL.ST6d],[MDL.ST6e],[MDL.ST6g],[MDL.ST6i],[MDL.ST6k],[MDL.ST6m],[MDL.SWATa],[MDL.SWATb],[MDL.SWATc],[MDL.SWATd],[MDL.ANARa],[MDL.ANARb],[MDL.ANARc],[MDL.ANARd],[MDL.BALKa],[MDL.BALKb],[MDL.BALKc],[MDL.BALKd],[MDL.BALKe],[MDL.BALKf],[MDL.BALKg],[MDL.BALKh],[MDL.BALKi],[MDL.BALKj],[MDL.LEETa],[MDL.LEETb],[MDL.LEETc],[MDL.LEETd],[MDL.LEETe],[MDL.LEETf],[MDL.LEETg],[MDL.LEETh],[MDL.LEETi],[MDL.PHXa],[MDL.PHXb],[MDL.PHXc],[MDL.PHXd],[MDL.PHXf],[MDL.PHXg],[MDL.PHXh],[MDL.PRTa],[MDL.PRTb],[MDL.PRTc],[MDL.PRTd],[MDL.PROa],[MDL.PROb],[MDL.PROc],[MDL.PROd],[MDL.SEPa],[MDL.SEPb],[MDL.SEPc],[MDL.SEPd],[MDL.H_CT],[MDL.H_T]
+];
+
+botModel <- Entities.FindByName(null,"botModel")
+botModelText <- Entities.FindByName(null,"botModelText")
+modelSpinner <- Entities.FindByName(null,"modelSpinner")
+
+function botModelDisplay()
+{
+	botModel.SetModel(botModelData[botModelIndex][0])
+	botModelText.__KeyValueFromString("message", (botModelIndex + 1) + "/" + (botModelData.len()))
+}
+
+
+::setModel <- function(modelNum)
+{
+	if(modelNum == null)
+	{Chat("Pick from 1 to 79")}
+	
+	botModel.SetModel(botModelData[modelNum][0])
+	botModelText.__KeyValueFromString("message", (modelNum.tointeger() + 1) + "/" + (botModelData.len()))
+}
+
+
+function botModelTrig(bot)
+{
+    bot.SetModel(botModelData[botModelIndex][0])
+}
+
+function botModelFunc()
+{
+	foreach( bot in VS.GetPlayersAndBots()[1] )
+	{
+		bot.SetModel(botModelData[botModelIndex][0])
+	}
+}
+
+function addBotModel()
+{
+	botModelIndex++
+	if (botModelIndex >= botModelData.len()) 
+    {
+        botModelIndex = 0
+		
+    }
+	botModelDisplay()
+	buttonPress("botModelAdd",green)
+}
+
+function removeBotModel()
+{
+	botModelIndex--
+	if(botModelIndex < 0) // safety check so index doesn't go out of bounds
+    {
+        botModelIndex = 78
+    }
+	botModelDisplay()
+	buttonPress("botModelSub",red)
+}
+
 
 ////////////////////////////////////////
 ////////////////Commands////////////////
 ////////////////////////////////////////
 
-function help()
-{
-	Chat("Type !c or !clear to clear decals.")
-	Chat("!p or !play will start the round.")
-	Chat("!r or !reset to return back to the main room.")
-
-}
-
-function NamedPlayer()
-{
-	Chat(" Created by NamedPlayer with help from SamXZ.")
-}
-
 function commandFunction()
 {
-	Chat(" Bot training loaded. Type !help in chat for help.")
-	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; sv_kick_ban_duration 0; mp_warmuptime 0;bot_knives_only 1;bot_stop 0;bot_max_vision_distance_override 1; mp_autoteambalance 0;mp_buytime 99999999  " , 0.00, activator, null)
-	DoEntFire("scmd", "Command", "mp_limitteams 0;mp_maxmoney 65535 ;mp_afterroundmoney 65535 ; mp_startmoney 65535; sv_cheats 1; mp_buy_anywhere 1; mp_respawn_on_death_t 1; mp_respawn_on_death_ct 1; mp_roundtime 60; sv_infinite_ammo 2; bot_stop 1; achievement_disable 1; mp_playercashawards 0; mp_radar_showall 1; mp_drop_knife_enable 1;mp_solid_teammates 0; bot_dont_shoot 1" , 0.00, activator, null)
+	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; sv_kick_ban_duration 0; mp_warmuptime 0;bot_knives_only 1;bot_stop 0;bot_max_vision_distance_override 1; mp_autoteambalance 0;mp_buytime 99999999" , 0.00, activator, null)
+	DoEntFire("scmd", "Command", "mp_limitteams 0;mp_maxmoney 65535 ;mp_afterroundmoney 65535 ; mp_startmoney 65535; sv_cheats 1; mp_buy_anywhere 1; mp_respawn_on_death_t 1; mp_respawn_on_death_ct 1; mp_roundtime 60; sv_infinite_ammo 2; bot_stop 1; achievement_disable 1; mp_playercashawards 0; mp_radar_showall 1; mp_drop_knife_enable 1;mp_solid_teammates 0; bot_dont_shoot 1;fog_override 1; fog_enable 0" , 0.00, activator, null)	
+	DoEntFire("scmd", "Command", "mp_warmup_end;mp_freezetime 1;mp_round_restart_delay 1; mp_items_prohibited 0" , 0.05, activator, null)
+	delay(Chat("Type !help for a list of chat commands."), 10)
+	VS.ValidateUseridAll()
+	botCountfunc()
+	botModelDisplay()
+	botModelFunc()
+	EntFire("setupTrig", "Enable")
+}
+
+function godMode()
+{ 
+	EntFire("ccmd", "Command","god", 0.0, HPlayer)
 }
 
 function commandBhop()
 {
 	DoEntFire("scmd", "Command", "sv_staminajumpcost 0; sv_staminalandcost 0; sv_staminamax 0; sv_staminarecoveryrate 0; sv_enablebunnyhopping 1; sv_autobunnyhopping 1;sv_airaccelerate 250;sv_timebetweenducks 0; sv_accelerate_use_weapon_speed 0;" , 0.00, activator, null)
 }
+
+function commandBhopDisable()
+{
+	DoEntFire("scmd", "Command", "sv_staminajumpcost .080 ; sv_staminalandcost .050; sv_staminamax 80; sv_staminarecoveryrate 60; sv_enablebunnyhopping 0; sv_autobunnyhopping 0;sv_airaccelerate 12;sv_timebetweenducks 0.4; sv_accelerate_use_weapon_speed 1;" , 0.00, activator, null)
+}
+
+
+
 //Chat("   - light red 2 -  violet - blue - light blue	 - T color - CT color - light red - green(money awards) - light green - green - Team color - red - white - gold")
+//Sponsors: DBro,dott
