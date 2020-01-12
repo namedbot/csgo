@@ -25,13 +25,12 @@ const CT = 3;
 	EntFire("CTWepTrig", "Enable")
 }
 
-
+/*
 ::OnGameEvent_player_hurt <- function(data)
 {
 	EntFire("dmgSound", "PlaySound")
-	test()
 }
-
+*/
 ::OnGameEvent_T_death <-function(data)
 {
 	if(playing == 1)
@@ -120,7 +119,11 @@ function say_cmd( str )
 			customKnife(val)
 			break
 		case "model":
-			setModel(val)
+			if(modelNum == null)
+			{
+				{Chat("Pick from 1 to 79")}
+			}
+			setModel(.tointeger())
 			break		
 		case "h":
 			VS.SetParent( botModel, modelSpinner )
@@ -584,11 +587,8 @@ function botModelDisplay()
 
 ::setModel <- function(modelNum)
 {
-	if(modelNum == null)
-	{Chat("Pick from 1 to 79")}
-	
 	botModel.SetModel(botModelData[modelNum][0])
-	botModelText.__KeyValueFromString("message", (modelNum.tointeger() + 1) + "/" + (botModelData.len()))
+	botModelText.__KeyValueFromString("message", (modelNum + 1) + "/" + (botModelData.len()))
 }
 
 
