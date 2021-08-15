@@ -4,15 +4,14 @@ IncludeScript("vs_library")
 ::s <- this
 ::pos <- Vector(0,0,0)
 ::playing <- 0
+
 const T = 2;
 const CT = 3;
 
 // Requirements:
 //    vs_library
-//    logic_eventlistener : player_say
-//    logic_eventlistener : player_info
-//    logic_eventlistener : player_connect
-//    logic_eventlistener : player_death
+
+
 
 
 ////////////////////////////////////////
@@ -25,12 +24,14 @@ const CT = 3;
 	EntFire("CTWepTrig", "Enable")
 }
 
-/*
+::hitmarker <- 0
 ::OnGameEvent_player_hurt <- function(data)
 {
-	EntFire("dmgSound", "PlaySound")
+	if(hitmarker = 1)
+	{EntFire("dmgSound", "PlaySound")}
 }
-*/
+
+
 ::OnGameEvent_T_death <-function(data)
 {
 	if(playing == 1)
@@ -40,92 +41,102 @@ const CT = 3;
 	}
 }
 
-::OnGameEvent_player_say <- function( data )
+VS.ListenToGameEvent( "player_say", function( event )
 {
-	local msg = data.text
-	if( msg.slice(0,1) != "!") return
-	SMain.say_cmd( msg.slice(1).tolower() )
-}
+	local msg = event.text
 
-function say_cmd( str )
+	if ( msg[0] != '!' )
+		return
+
+	local player = VS.GetPlayerByUserid( event.userid )
+	SayCommand( player, msg )
+}.bindenv(this), "" )
+
+function SayCommand( player, msg )
 {
-	local buffer = split(str, " ")
-	local val, cmd = buffer[0]
-	try( val = buffer[1] ) catch(e){}
-	switch( cmd.tolower() )
+
+	local argv = split( msg, " " )
+	local argc = argv.len()
+
+	local value
+	if ( argc > 1 )
+		value = argv[1]
+
+	
+	switch ( argv[0].tolower() )
 	{
-		case "p":
-		case "play":
-		case "start":
+		case "!p":
+		case "!play":
+		case "!start":
 			play()
 			break
-		case "r":
-		case "stop":
-		case "reset":
-		case "spawn":
+		case "!r":
+		case "!stop":
+		case "!reset":
+		case "!spawn":
 			EntFire("scmd", "Command", "bot_stop 1")
 			stop()
 			resetPlayer()
 			break	
-		case "rr":
+		case "!rr":
 			SendToConsole("mp_restartgame 1")
 			stop()
 			break	
-		case "c":
-		case "clear":
-		case "cleardecals":
+		case "!c":
+		case "!clear":
+		case "!cleardecals":
 			clearDecals()
 			break			
-		case "help":
+		case "!help":
 			help() 
 			break
-		case "fov":
-			playerFOV(val)
+		case "!fov":
+			playerFOV(value)
 			break
-		case "dc":
-		case "exit":
+		case "!dc":
+		case "!exit":
 			leaveGame()
 			stop()
 			break
-		case "bh":				
-		case "bhop":
+		case "!bh":				
+		case "!bhop":
 			stop()
 			pos = Vector(10240,-4608 ,-2264)
 			s.teleportPlayer()
 			break
-		case "b":
-		case "b1":
-		case "bonus1":
+		case "!b":
+		case "!b1":
+		case "!bonus1":
 			stop()
 			pos = Vector(-352,3992,229)  
 			s.teleportPlayer()
 			break
-		case "b2":
-		case "bonus2":
+		case "!b2":
+		case "!bonus2":
 			stop()
 			pos = Vector(768,3376,168)    
 			s.teleportPlayer()
 			break
-		case "g":
-		case "god":
+		case "!g":
+		case "!god":
 			godMode()
 			Chat("God Mode Toggled")
 			break
-		case "nc":
-		case "noclip":
+		case "!nc":
+		case "!noclip":
 			SendToConsole("noclip")
 			break
-		case "knife":
+		case "!knife":
 			customKnife(val)
 			break
-		case "model":
+		case "!model":
 			if(modelNum == null)
 			{
 				{Chat("Pick from 1 to 79")}
 			}
-			setModel(.tointeger())
+			setModel(val.tointeger())
 			break		
-		case "h":
+		case "!h":
 			VS.SetParent( botModel, modelSpinner )
 			break
 			
@@ -133,6 +144,8 @@ function say_cmd( str )
 			Chat("Invalid command.")
 	}
 }
+
+
 
 
 ////////////////////////////////////////
@@ -143,7 +156,7 @@ sWeapCurr <- null;
 
 enum weapon{glock="glock",hkp2000="hkp2000",usp_silencer="usp_silencer",elite="elite",p250="p250",tec9="tec9",deagle="deagle",galilar="galilar",famas="famas",ak47="ak47",m4a1="m4a1",m4a1_silencer="m4a1_silencer",ssg08="ssg08",aug="aug",sg556="sg556",awp="awp",scar20="scar20",g3sg1="g3sg1",nova="nova",xm1014="xm1014",mag7="mag7",m249="m249",negev="negev",mac10="mac10",mp9="mp9",mp7="mp7",ump45="ump45",p90="p90",bizon="bizon",mp5sd="mp5sd",sawedoff="sawedoff",cz75a="cz75a",fiveseven="fiveseven",revolver="revolver",bumpmine="bumpmine"}
 
-function SetTeam(i){VS.SetKeyInt( HPlayer, "teamnumber", i )}
+function SetTeam(i){HPlayer.__KeyValueFromInt("teamnumber", i )}
 function Equip( input, player )
 {
 	sWeapCurr = input;
@@ -152,7 +165,7 @@ function Equip( input, player )
 	SetTeam(T);
 
 	EntFire( "equip", "triggerforactivatedplayer", "weapon_"+input, 0.0, player )
-	delay("SetTeam(CT)")
+	delay( "SetTeam(CT)", 0, self )
 }
 
 function customKnife(knife)
@@ -174,26 +187,7 @@ function customKnife(knife)
 ///////////////Functions////////////////
 ////////////////////////////////////////
 
-function SetupPlayers( ent )
-{
-	if( ent.GetClassname() != "player" ) return
-	ent.ValidateScriptScope()
-	local scope = ent.GetScriptScope()
-	
-	// if the player is not set up
-	if( !("loaded" in scope) )
-	{
-		// adds userid/networkid/name
-		VS.ValidateUserid( ent )
-		scope.loaded <- true
-	}
-}
 
-
-::test <- function()
-{
-	Chat("Test.")
-}
 
 ::play <- function()
 {
@@ -285,21 +279,9 @@ fogCheck <- 0
 }
 
 
-botCount <- VS.GetPlayersAndBots()[1].len()
-function KickBot( input )
-{
-	//VS.DumpScope(input.GetScriptScope())
-	local userid = input.GetScriptScope().userid
-	
-	foreach( bot in VS.GetPlayersAndBots()[1] )
-	{
-		local n = bot.GetScriptScope().userid
-		if( n == userid )
-		{
-			SendToConsole("kickid " + n)
-		}
-	}
-}
+
+
+
 
 
 ////////////////////////////////////////
@@ -314,27 +296,39 @@ function buttonPress(buttonName,color)
 	EntFire(buttonName, "AddOutput", "Color 255 255 255" , 0.2)
 }
 
+::botCount <- VS.GetPlayersAndBots()[1].len()
 function removeBot()
 {
-	local bots = VS.GetPlayersAndBots()[1]
-	KickBot( bots[0] )
-	SendToConsole("bot_quota " + (bots.len() - 1))
-	botCountfunc()
+	EntFire("scmd", "Command", "bot_kick t")	
 	buttonPress("botCountSub",red)
+	botCountfunc()
 }
 
 function addBot()
 {
 	SendToConsole("bot_add_t")
-	botCountfunc()
 	buttonPress("botCountAdd",green)
+	botCountfunc()
 }
 
 botCountText <- Entities.FindByName(null,"botCountText")
-function botCountfunc()
+::botCountfunc <- function()
 {
 	local bots = VS.GetPlayersAndBots()[1]
-	delay("botCountText.__KeyValueFromInt(\"message\", VS.GetPlayersAndBots()[1].len())", 0.1)
+	//botCountText.__KeyValueFromInt("message", bots.len())
+	VS.EventQueue.AddEvent( botCountText.__KeyValueFromInt, 0.1, [ botCountText, "message", bots.len() ] )
+}
+
+::test <- function()
+{
+	//local player = VS.GetPlayerByUserid( userid )
+	//local scope = player.GetScriptScope()
+	//printl( scope.userid )
+	//printl( scope.networkid )
+	//printl( scope.name )
+	VS.DumpPlayers(1)
+	
+	Chat("Test.")
 }
 
 score <- 0
@@ -463,9 +457,46 @@ function help()
 	Chat("!fov <number> to change your Field of view.")
 }
 
+
+////////////////////////////////////////
+////////////////Commands////////////////
+////////////////////////////////////////
+
+function commandFunction()
+{
+	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; sv_kick_ban_duration 0; mp_warmuptime 0;bot_knives_only 1;bot_stop 0;bot_max_vision_distance_override 1; mp_autoteambalance 0;mp_buytime 99999999" , 0.00, activator, null)
+	DoEntFire("scmd", "Command", "mp_limitteams 0;mp_maxmoney 65535 ;mp_afterroundmoney 65535 ; mp_startmoney 65535; sv_cheats 1; mp_buy_anywhere 1; mp_respawn_on_death_t 1; mp_respawn_on_death_ct 1; mp_roundtime 60; sv_infinite_ammo 2; bot_stop 1; achievement_disable 1; mp_playercashawards 0; mp_radar_showall 1; mp_drop_knife_enable 1;mp_solid_teammates 0; bot_dont_shoot 1;fog_override 1; fog_enable 0" , 0.00, activator, null)	
+	DoEntFire("scmd", "Command", "mp_warmup_end;mp_freezetime 1;mp_round_restart_delay 1; mp_items_prohibited 0" , 0.05, activator, null)
+	delay(Chat("Type !help for a list of chat commands."), 10)
+	VS.ValidateUseridAll()
+	s.botCountfunc()
+	s.botModelDisplay()
+	botModelFunc()
+	EntFire("setupTrig", "Enable")
+}
+
+function godMode()
+{ 
+	EntFire("ccmd", "Command","god", 0.0, HPlayer)
+}
+
+function commandBhop()
+{
+	DoEntFire("scmd", "Command", "sv_staminajumpcost 0; sv_staminalandcost 0; sv_staminamax 0; sv_staminarecoveryrate 0; sv_enablebunnyhopping 1; sv_autobunnyhopping 1;sv_airaccelerate 250;sv_timebetweenducks 0; sv_accelerate_use_weapon_speed 0;" , 0.00, activator, null)
+}
+
+function commandBhopDisable()
+{
+	DoEntFire("scmd", "Command", "sv_staminajumpcost .080 ; sv_staminalandcost .050; sv_staminamax 80; sv_staminarecoveryrate 60; sv_enablebunnyhopping 0; sv_autobunnyhopping 0;sv_airaccelerate 12;sv_timebetweenducks 0.4; sv_accelerate_use_weapon_speed 1;" , 0.00, activator, null)
+}
+
+
 ////////////////////////////////////////
 ////////////////Models//////////////////
 ////////////////////////////////////////
+
+
+	
 
 enum MDL
 {
@@ -573,6 +604,7 @@ botModelIndex <- 0
 botModelData <- [	
 	[MDL.FBIa],[MDL.FBIb],[MDL.FBIc],[MDL.FBId],[MDL.FBIe],[MDL.FBIf],[MDL.FBIg],[MDL.FBIh],[MDL.GIGNa],[MDL.GIGNb],[ MDL.GIGNc],[MDL.GIGNd],[MDL.GSG9a],[MDL.GSG9b],[MDL.GSG9c],[MDL.GSG9d],[MDL.IDFb],[MDL.IDFc],[MDL.IDFd],[MDL.IDFe],[MDL.IDFf],[MDL.SASa],[MDL.ST6a],[MDL.ST6b],[MDL.ST6c],[MDL.ST6d],[MDL.ST6e],[MDL.ST6g],[MDL.ST6i],[MDL.ST6k],[MDL.ST6m],[MDL.SWATa],[MDL.SWATb],[MDL.SWATc],[MDL.SWATd],[MDL.ANARa],[MDL.ANARb],[MDL.ANARc],[MDL.ANARd],[MDL.BALKa],[MDL.BALKb],[MDL.BALKc],[MDL.BALKd],[MDL.BALKe],[MDL.BALKf],[MDL.BALKg],[MDL.BALKh],[MDL.BALKi],[MDL.BALKj],[MDL.LEETa],[MDL.LEETb],[MDL.LEETc],[MDL.LEETd],[MDL.LEETe],[MDL.LEETf],[MDL.LEETg],[MDL.LEETh],[MDL.LEETi],[MDL.PHXa],[MDL.PHXb],[MDL.PHXc],[MDL.PHXd],[MDL.PHXf],[MDL.PHXg],[MDL.PHXh],[MDL.PRTa],[MDL.PRTb],[MDL.PRTc],[MDL.PRTd],[MDL.PROa],[MDL.PROb],[MDL.PROc],[MDL.PROd],[MDL.SEPa],[MDL.SEPb],[MDL.SEPc],[MDL.SEPd],[MDL.H_CT],[MDL.H_T]
 ];
+foreach( mdl in botModelData ) PrecacheModel( mdl )
 
 botModel <- Entities.FindByName(null,"botModel")
 botModelText <- Entities.FindByName(null,"botModelText")
@@ -594,7 +626,7 @@ function botModelDisplay()
 
 function botModelTrig(bot)
 {
-    bot.SetModel(botModelData[botModelIndex][0])
+   bot.SetModel(botModelData[botModelIndex][0])
 }
 
 function botModelFunc()
@@ -626,39 +658,6 @@ function removeBotModel()
     }
 	botModelDisplay()
 	buttonPress("botModelSub",red)
-}
-
-
-////////////////////////////////////////
-////////////////Commands////////////////
-////////////////////////////////////////
-
-function commandFunction()
-{
-	DoEntFire("scmd", "Command", "mp_autokick 0; mp_disable_autokick 1; mp_spawnprotectiontime -1; mp_td_dmgtokick 999999999; mp_td_dmgtowarn 999999999; mp_td_spawndmgthreshold 999999999; sv_kick_ban_duration 0; mp_warmuptime 0;bot_knives_only 1;bot_stop 0;bot_max_vision_distance_override 1; mp_autoteambalance 0;mp_buytime 99999999" , 0.00, activator, null)
-	DoEntFire("scmd", "Command", "mp_limitteams 0;mp_maxmoney 65535 ;mp_afterroundmoney 65535 ; mp_startmoney 65535; sv_cheats 1; mp_buy_anywhere 1; mp_respawn_on_death_t 1; mp_respawn_on_death_ct 1; mp_roundtime 60; sv_infinite_ammo 2; bot_stop 1; achievement_disable 1; mp_playercashawards 0; mp_radar_showall 1; mp_drop_knife_enable 1;mp_solid_teammates 0; bot_dont_shoot 1;fog_override 1; fog_enable 0" , 0.00, activator, null)	
-	DoEntFire("scmd", "Command", "mp_warmup_end;mp_freezetime 1;mp_round_restart_delay 1; mp_items_prohibited 0" , 0.05, activator, null)
-	delay(Chat("Type !help for a list of chat commands."), 10)
-	VS.ValidateUseridAll()
-	botCountfunc()
-	botModelDisplay()
-	botModelFunc()
-	EntFire("setupTrig", "Enable")
-}
-
-function godMode()
-{ 
-	EntFire("ccmd", "Command","god", 0.0, HPlayer)
-}
-
-function commandBhop()
-{
-	DoEntFire("scmd", "Command", "sv_staminajumpcost 0; sv_staminalandcost 0; sv_staminamax 0; sv_staminarecoveryrate 0; sv_enablebunnyhopping 1; sv_autobunnyhopping 1;sv_airaccelerate 250;sv_timebetweenducks 0; sv_accelerate_use_weapon_speed 0;" , 0.00, activator, null)
-}
-
-function commandBhopDisable()
-{
-	DoEntFire("scmd", "Command", "sv_staminajumpcost .080 ; sv_staminalandcost .050; sv_staminamax 80; sv_staminarecoveryrate 60; sv_enablebunnyhopping 0; sv_autobunnyhopping 0;sv_airaccelerate 12;sv_timebetweenducks 0.4; sv_accelerate_use_weapon_speed 1;" , 0.00, activator, null)
 }
 
 
